@@ -1,0 +1,4337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大地电磁 (MT) 正演计算与 AI 智能体应用综合汇报演示</title>
+  <meta name="description" content="大地电磁 (MT) 正演计算综合汇报：控制方程、数值方法综述、人工智能与智能体协同工作流演示。">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- MathJax -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Three.js and OrbitControls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      /* Premium Warm Light Color Palette */
+      --bg-dark: #faf6ef;
+      --bg-panel: #fdfbf7;
+      --bg-card: rgba(253, 251, 247, 0.94);
+      --border-color: #e6dfd3;
+      --border-color-active: #b45309;
+      --text-primary: #2d2417;
+      --text-secondary: #5d4f3b;
+      --text-muted: #8c7e6b;
+      
+      --color-amber: #b45309;
+      --color-royal-blue: #2563eb;
+      --color-forest-green: #16a34a;
+      --color-crimson: #b91c1c;
+      --color-purple: #7c3aed;
+      --color-yellow: #d97706;
+
+      --theme-glow: rgba(180, 83, 9, 0.08);
+      --box-shadow-color: rgba(60, 47, 29, 0.08);
+      
+      --font-display: 'Outfit', 'Noto Serif SC', serif;
+      --font-body: 'Outfit', system-ui, -apple-system, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+
+      /* New themed variables */
+      --header-bg: rgba(253, 251, 247, 0.95);
+      --formula-bg: #f6efe2;
+      --table-header-bg: #f2e9d7;
+      --widget-canvas-bg: #faf6ee;
+      --agent-sheet-bg: #fdfbf7;
+      --slider-track-bg: #e6dfd3;
+      --select-bg: #fdfbf7;
+      --pre-bg: #f6efe2;
+      --highlight-bg: rgba(180, 83, 9, 0.02);
+    }
+
+    body.theme-dark {
+      --bg-dark: #070a13;
+      --bg-panel: #0d1326;
+      --bg-card: rgba(13, 19, 38, 0.94);
+      --border-color: #1e294b;
+      --border-color-active: #00f2fe;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --color-amber: #00f2fe;
+      --color-royal-blue: #3b82f6;
+      --color-forest-green: #22c55e;
+      --color-crimson: #f43f5e;
+      --color-purple: #c084fc;
+      --color-yellow: #eab308;
+      --theme-glow: rgba(0, 242, 254, 0.08);
+      --box-shadow-color: rgba(0, 0, 0, 0.4);
+      --header-bg: rgba(13, 19, 38, 0.95);
+      --formula-bg: #0b0f19;
+      --table-header-bg: #131b2e;
+      --widget-canvas-bg: #070a13;
+      --agent-sheet-bg: #0d1326;
+      --slider-track-bg: #1e294b;
+      --select-bg: #0d1326;
+      --pre-bg: #0b0f19;
+      --highlight-bg: rgba(0, 242, 254, 0.02);
+    }
+
+    body.theme-light {
+      --bg-dark: #f1f5f9;
+      --bg-panel: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.94);
+      --border-color: #cbd5e1;
+      --border-color-active: #2563eb;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --color-amber: #2563eb;
+      --color-royal-blue: #3b82f6;
+      --color-forest-green: #16a34a;
+      --color-crimson: #b91c1c;
+      --color-purple: #7c3aed;
+      --color-yellow: #d97706;
+      --theme-glow: rgba(37, 99, 235, 0.08);
+      --box-shadow-color: rgba(0, 0, 0, 0.08);
+      --header-bg: rgba(255, 255, 255, 0.95);
+      --formula-bg: #f8fafc;
+      --table-header-bg: #e2e8f0;
+      --widget-canvas-bg: #f1f5f9;
+      --agent-sheet-bg: #ffffff;
+      --slider-track-bg: #cbd5e1;
+      --select-bg: #ffffff;
+      --pre-bg: #f8fafc;
+      --highlight-bg: rgba(37, 99, 235, 0.02);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Background Animation Grid */
+    .bg-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background-image: 
+        linear-gradient(rgba(140, 126, 107, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(140, 126, 107, 0.08) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .bg-glow {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(180, 83, 9, 0.03) 0%, transparent 70%);
+      top: -300px;
+      left: -300px;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Header Styling */
+    header {
+      background: rgba(253, 251, 247, 0.95);
+      border-bottom: 1px solid var(--border-color);
+      padding: 15px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(10px);
+      z-index: 10;
+      flex-shrink: 0;
+      box-shadow: 0 4px 15px var(--box-shadow-color);
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--color-amber) 0%, var(--color-yellow) 100%);
+      color: #fff;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(180, 83, 9, 0.2);
+    }
+
+    .logo-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-primary);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .nav-tab:hover {
+      color: var(--text-primary);
+      background: rgba(230, 223, 211, 0.4);
+    }
+
+    .nav-tab.active {
+      color: #fff;
+      background: var(--color-amber);
+      border-color: var(--color-amber);
+    }
+
+    /* Main Slideshow Viewport (Expanded, Full Screen Feeling) */
+    .slideshow-viewport {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 3vh 5vw;
+      overflow: hidden;
+    }
+
+    /* Fullscreen Slide Container */
+    .slide-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 15px 40px var(--box-shadow-color);
+      backdrop-filter: blur(20px);
+      padding: 4vh 5vw;
+      position: relative;
+      overflow: hidden;
+      transition: opacity 0.3s ease;
+    }
+
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+      z-index: 5;
+    }
+
+    .slide-module-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--color-amber);
+      background: rgba(180, 83, 9, 0.08);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .slide-title-area h2 {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      margin-top: 6px;
+      color: var(--text-primary);
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text-primary);
+      overflow-y: auto;
+      z-index: 5;
+      padding-right: 10px;
+    }
+
+    .slide-body p {
+      color: var(--text-secondary);
+    }
+
+    .slide-body ul, .slide-body ol {
+      margin-left: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slide-body li {
+      color: var(--text-secondary);
+    }
+
+    .slide-body li strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Grid Layouts for Content */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: center;
+      height: 100%;
+    }
+
+    .grid-2col-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .grid-3col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    /* Scientific Formulas Panel */
+    .formula-panel {
+      background: var(--formula-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 10px 0;
+      text-align: center;
+      color: var(--text-primary);
+      box-shadow: inset 0 2px 4px rgba(60, 47, 29, 0.03);
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 10px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: var(--bg-panel);
+      box-shadow: 0 4px 12px var(--box-shadow-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--table-header-bg);
+      color: var(--text-primary);
+      font-weight: 700;
+      padding: 12px 16px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    pre {
+      background: var(--pre-bg) !important;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(230, 223, 211, 0.25);
+    }
+
+    /* Highlight boxes */
+    .highlight-box {
+      background: rgba(180, 83, 9, 0.02);
+      border-left: 5px solid var(--color-amber);
+      padding: 16px;
+      border-radius: 0 10px 10px 0;
+      margin: 8px 0;
+    }
+
+    .highlight-box-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--color-amber);
+      font-size: 14px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Title Slide Custom Layout */
+    .title-slide {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: radial-gradient(circle at center, #fdfbf7 0%, #faf6ef 100%);
+    }
+
+    .title-slide h1 {
+      font-family: var(--font-display);
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 15px;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--color-amber) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title-slide h3 {
+      font-family: var(--font-body);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      letter-spacing: 1.5px;
+    }
+
+    .title-slide-meta {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 30px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 30px;
+      width: 80%;
+      max-width: 800px;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .meta-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .meta-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Bottom Controller Bar */
+    .controller-bar {
+      background: rgba(253, 251, 247, 0.96);
+      border-top: 1px solid var(--border-color);
+      padding: 15px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(10px);
+      z-index: 10;
+      flex-shrink: 0;
+      box-shadow: 0 -4px 15px var(--box-shadow-color);
+    }
+
+    .ctrl-left-group, .ctrl-right-group {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .ctrl-btn {
+      background: transparent;
+      border: 1px solid rgba(140, 126, 107, 0.3);
+      color: var(--text-secondary);
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .ctrl-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-color-active);
+      background: rgba(230, 223, 211, 0.3);
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .ctrl-progress {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Dots Pagination Indicator */
+    .dots-container {
+      display: flex;
+      gap: 6px;
+      max-width: 50vw;
+      overflow-x: auto;
+      padding: 4px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--border-color);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .dot.active {
+      background-color: var(--color-amber);
+      transform: scale(1.35);
+      box-shadow: 0 0 8px rgba(180, 83, 9, 0.4);
+    }
+
+    /* Screen Left/Right Floating Flip Buttons */
+    .floating-flip-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 60px;
+      height: 100px;
+      background: rgba(253, 251, 247, 0.4);
+      border: 1px solid rgba(230, 223, 211, 0.5);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s, background-color 0.2s;
+      z-index: 100;
+      font-size: 24px;
+      color: var(--text-secondary);
+    }
+
+    .slideshow-viewport:hover .floating-flip-btn {
+      opacity: 1;
+    }
+
+    .floating-flip-btn:hover {
+      background: rgba(253, 251, 247, 0.85);
+      color: var(--color-amber);
+      border-color: var(--color-amber);
+    }
+
+    .floating-flip-left {
+      left: 10px;
+      border-radius: 0 12px 12px 0;
+    }
+
+    .floating-flip-right {
+      right: 10px;
+      border-radius: 12px 0 0 12px;
+    }
+
+    /* Slide Drawer Menu (Sidebar Table of Contents) */
+    .drawer-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      height: 100vh;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-color);
+      box-shadow: 5px 0 25px rgba(0,0,0,0.08);
+      z-index: 200;
+      transition: left 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 30px 20px;
+      overflow-y: auto;
+    }
+
+    .drawer-menu.open {
+      left: 0;
+    }
+
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(60, 47, 29, 0.2);
+      backdrop-filter: blur(4px);
+      z-index: 190;
+      display: none;
+    }
+
+    .drawer-overlay.open {
+      display: block;
+    }
+
+    .sidebar-title {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 5px;
+    }
+
+    .slide-link {
+      background: transparent;
+      border: none;
+      text-align: left;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      outline: none;
+    }
+
+    .slide-link:hover {
+      background: rgba(230, 223, 211, 0.4);
+      color: var(--text-primary);
+    }
+
+    .slide-link.active {
+      background: rgba(180, 83, 9, 0.08);
+      color: var(--color-amber);
+      font-weight: 600;
+    }
+
+    .slide-link-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Interactive 3D Fullscreen Styles */
+    .slide-card.fullscreen-3d {
+      padding: 0;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 15px 45px var(--box-shadow-color);
+      border-radius: 20px;
+    }
+
+    .canvas-3d-fullbleed {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      cursor: grab;
+    }
+
+    .canvas-3d-fullbleed:active {
+      cursor: grabbing;
+    }
+
+    .floating-panel {
+      position: absolute;
+      top: 4vh;
+      left: 4vw;
+      z-index: 10;
+      width: 430px;
+      background: rgba(253, 251, 247, 0.85);
+      border: 1px solid rgba(230, 223, 211, 0.8);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px var(--box-shadow-color);
+      pointer-events: auto;
+      max-height: 92%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .floating-panel h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .floating-panel p {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* Form controls and widgets */
+    .control-group-widget {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(246, 239, 226, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .widget-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .widget-val {
+      font-family: var(--font-mono);
+      color: var(--color-amber);
+    }
+
+    input[type="range"].widget-slider {
+      width: 100%;
+      background: var(--slider-track-bg);
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      accent-color: var(--color-amber);
+    }
+
+    select.widget-select {
+      background: var(--select-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 6px 10px;
+      border-radius: 6px;
+      outline: none;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    select.widget-select:focus {
+      border-color: var(--color-amber);
+    }
+
+    /* Embedded Iframe */
+    .iframe-container {
+      width: 100%;
+      height: 480px;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px var(--box-shadow-color);
+    }
+
+    /* 2D Canvas container styles */
+    .widget-2d-canvas-container {
+      position: relative;
+      background: var(--widget-canvas-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 100%;
+      height: 250px;
+      overflow: hidden;
+      box-shadow: inset 0 2px 5px rgba(60, 47, 29, 0.05);
+    }
+
+    /* SVG Plotting styles */
+    .plot-container-svg {
+      background: var(--widget-canvas-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 100%;
+      height: 260px;
+      position: relative;
+      box-shadow: inset 0 2px 5px rgba(60, 47, 29, 0.05);
+    }
+
+    .plot-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .axis-line {
+      stroke: var(--border-color);
+      stroke-width: 1.5;
+    }
+
+    .grid-line {
+      stroke: var(--border-color);
+      opacity: 0.35;
+      stroke-width: 0.5;
+    }
+
+    .grid-line-major {
+      stroke: var(--border-color);
+      opacity: 0.65;
+      stroke-width: 0.8;
+    }
+
+    .plot-axis-label {
+      font-size: 10px;
+      fill: var(--text-muted);
+      font-family: var(--font-body);
+    }
+
+    .plot-legend-text {
+      font-size: 10px;
+      font-weight: 600;
+      font-family: var(--font-body);
+    }
+
+    /* Tooltip styling for SVG Sounding Plot */
+    .plot-tooltip {
+      position: absolute;
+      background: var(--bg-card);
+      border: 1px solid var(--color-amber);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      pointer-events: none;
+      box-shadow: 0 4px 12px var(--box-shadow-color);
+      display: none;
+      z-index: 100;
+    }
+
+    /* Agent detail styles */
+    .agent-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .agent-card-sheet {
+      background: var(--agent-sheet-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 12px var(--box-shadow-color);
+    }
+
+    .agent-sheet-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-amber);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .agent-sheet-content {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* Citation cards */
+    .citation-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .citation-card {
+      background: rgba(230, 223, 211, 0.15);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 15px 20px;
+      transition: all 0.2s;
+    }
+
+    .citation-card:hover {
+      border-color: var(--color-amber);
+      background: rgba(230, 223, 211, 0.3);
+    }
+
+    .citation-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .citation-authors {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .citation-journal {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* OOD Alarm style */
+    .ood-alarm-banner {
+      background: rgba(185, 28, 28, 0.08);
+      border: 1.5px solid var(--color-crimson);
+      color: var(--color-crimson);
+      padding: 10px 14px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+      animation: flash-alarm 1.5s infinite alternate;
+      display: none;
+    }
+
+    @keyframes flash-alarm {
+      from { box-shadow: 0 0 2px var(--color-crimson); }
+      to { box-shadow: 0 0 12px var(--color-crimson); background: rgba(185, 28, 28, 0.15); }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-amber);
+    }
+
+    /* Animation tags */
+    .yee-cb-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .yee-e-color { color: var(--color-crimson); }
+    .yee-h-color { color: var(--color-royal-blue); }
+
+    .btn-action-widget {
+      background: var(--color-amber);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-action-widget:hover {
+      opacity: 0.9;
+    }
+
+    .radar-tabs, .pol-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .radar-tab-btn, .pol-tab {
+      background: rgba(230, 223, 211, 0.5);
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .radar-tab-btn.active, .pol-tab.active {
+      background: var(--color-amber);
+      color: #fff;
+      border-color: var(--color-amber);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <header>
+    <div class="logo-section">
+      <div class="logo-badge">MT</div>
+      <div class="logo-title">大地电磁正演计算与 AI Agent 演示平台</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <div class="nav-tabs" id="module-tabs">
+        <button class="nav-tab active" onclick="switchModule(0)">① 控制方程推导</button>
+        <button class="nav-tab" onclick="switchModule(1)">② 数值方法综述</button>
+        <button class="nav-tab" onclick="switchModule(2)">③ AI 与 Agent 应用</button>
+        <button class="nav-tab" onclick="switchModule(3)">④ 参考文献与总结</button>
+      </div>
+      <div class="theme-select-container" style="border-left: 1px solid var(--border-color); padding-left: 15px;">
+        <select id="presentation-theme-select" onchange="changePresentationTheme()" style="padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-primary); cursor: pointer; outline: none; font-family: var(--font-body); transition: border-color 0.2s;">
+          <option value="warm" selected>🍵 暖色模式</option>
+          <option value="dark">🌙 深色模式</option>
+          <option value="light">☀️ 浅色模式</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Drawer (Table of Contents) -->
+  <div class="drawer-overlay" id="menu-overlay" onclick="toggleDrawer(false)"></div>
+  <div class="drawer-menu" id="menu-drawer">
+    <!-- Injected dynamically -->
+  </div>
+
+  <!-- Viewport for Presentation Slides -->
+  <div class="slideshow-viewport">
+    <div class="floating-flip-btn floating-flip-left" onclick="prevSlide()" title="上一页 (←)">◀</div>
+    <div class="floating-flip-btn floating-flip-right" onclick="nextSlide()" title="下一页 (→/Space)">▶</div>
+    <div id="slide-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;">
+      <!-- Slides dynamically rendered here -->
+    </div>
+  </div>
+
+  <!-- Bottom Controller Bar -->
+  <div class="controller-bar">
+    <div class="ctrl-left-group">
+      <button class="ctrl-btn" onclick="toggleDrawer(true)" title="打开页面目录">☰</button>
+      <button class="ctrl-btn" id="btn-prev" onclick="prevSlide()" title="上一页 (←)">◀</button>
+      <div class="ctrl-progress" id="slide-progress">1 / 1</div>
+      <button class="ctrl-btn" id="btn-next" onclick="nextSlide()" title="下一页 (→)">▶</button>
+    </div>
+    <div class="dots-container" id="dots-wrapper">
+      <!-- Dot indicators dynamically generated -->
+    </div>
+    <div class="ctrl-right-group">
+      <div class="ctrl-progress" id="slide-module-name">控制方程推导</div>
+    </div>
+  </div>
+
+  <script>
+    // Complex number arithmetic helper
+    const C = {
+      add: (a, b) => ({r: a.r + b.r, i: a.i + b.i}),
+      sub: (a, b) => ({r: a.r - b.r, i: a.i - b.i}),
+      mul: (a, b) => ({r: a.r * b.r - a.i * b.i, i: a.r * b.i + a.i * b.r}),
+      div: (a, b) => {
+        const d = b.r * b.r + b.i * b.i;
+        return {r: (a.r * b.r + a.i * b.i) / d, i: (a.i * b.r - a.r * b.i) / d};
+      },
+      sqrt: (a) => {
+        const r = Math.sqrt(a.r * a.r + a.i * a.i);
+        const angle = Math.atan2(a.i, a.r);
+        return {r: Math.sqrt((r + a.r) / 2), i: (a.i >= 0 ? 1 : -1) * Math.sqrt((r - a.r) / 2)};
+      },
+      tanh: (a) => {
+        const x = a.r, y = a.i;
+        const denom = Math.cosh(2 * x) + Math.cos(2 * y);
+        if (denom === 0) return {r: 0, i: 0};
+        return {
+          r: Math.sinh(2 * x) / denom,
+          i: Math.sin(2 * y) / denom
+        };
+      }
+    };
+
+    // 47 slides flat structure database
+    const presentationData = [
+      // Module 0: 控制方程推导
+      {
+        module: 0,
+        moduleName: "控制方程推导",
+        slides: [
+          {
+            title: "大地电磁正演控制方程推导",
+            isTitleSlide: true,
+            html: `
+              <h1>大地电磁正演控制方程推导</h1>
+              <h3>从麦克斯韦方程组出发，构建适配一维、二维及三维地球介质的核心数学模型</h3>
+              <p style="color:var(--text-secondary); max-width: 800px; margin: 0 auto 30px auto; font-size:15px;">本章介绍经典电磁理论在大地电磁勘探中的数学表达。通过引入准静态近似、时谐场等物理合理简化，推导出刻画地球电磁响应的亥姆霍兹偏微分方程，奠定整个地球物理电磁数值计算与反演大厦的基石。</p>
+              <div class="title-slide-meta">
+                <div class="meta-item">
+                  <div class="meta-label">汇报模块</div>
+                  <div class="meta-value">第一部分：控制方程</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">物理约束</div>
+                  <div class="meta-value">时谐准静态麦克斯韦约束</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">公式解析</div>
+                  <div class="meta-value">MathJax 3.0 矢量排版</div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "理论起点：麦克斯韦方程组 (Maxwell Equations)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>经典宏观电磁学基本规律由麦克斯韦方程组偏微分形式描述，刻画空间电磁场在时空上的相互交织与演化规律：</p>
+                  <div class="formula-panel">
+                    $$\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t} \\quad \\text{(法拉第电磁感应定律)}$$
+                    $$\\nabla \\times \\mathbf{H} = \\mathbf{J} + \\frac{\\partial \\mathbf{D}}{\\partial t} \\quad \\text{(麦克斯韦-安培定律)}$$
+                    $$\\nabla \\cdot \\mathbf{D} = \\rho_f \\quad \\text{(高斯电场定律)}$$
+                    $$\\nabla \\cdot \\mathbf{B} = 0 \\quad \\text{(高斯磁场定律)}$$
+                  </div>
+                </div>
+                <div>
+                  <div class="highlight-box">
+                    <div class="highlight-box-title">电磁介质本构关系与物理量</div>
+                    <p style="font-size:13px; line-height: 1.5;">
+                      • $\\mathbf{E}$：电场强度矢量 (V/m)，$\\mathbf{H}$：磁场强度 (A/m)
+                      <br>• $\\mathbf{D}$：电位移矢量 ($C/m^2$)，$\\mathbf{B}$：磁感应强度 ($T$)
+                      <br>• $\\mathbf{J} = \\sigma \\mathbf{E}$：传导电流密度 ($A/m^2$)，$\\sigma$：介质电导率 ($S/m$)
+                      <br>• 本构关系：$\\mathbf{D} = \\epsilon \\mathbf{E}$，$\\mathbf{B} = \\mu \\mathbf{H}$，其中 $\\epsilon$ 为介电常数，$\\mu$ 为磁导率（地壳中常取真空磁导率 $\\mu_0 = 4\\pi \\times 10^{-7}$ H/m）。
+                    </p>
+                  </div>
+                  <p style="font-size: 13.5px; margin-top: 10px;">在高斯电场定律中，$\\rho_f$ 代表空间自由电荷密度。在大地电磁勘探中，地表激发源位于极远处（电离层与雷电场源），在地下岩石内部通常没有局部自由电荷堆积，故有 $\\rho_f = 0$。</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "频率域时谐场假设 (Harmonic Fields)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>大地电磁勘探在频域进行数据处理和解释。假设天然交变场源在时间上呈简谐交变形式，随时间演化因子为 $e^{i\\omega t}$（$\\omega = 2\\pi f$ 为角频率）。</p>
+                  <p>对于任意随时间谐变的物理场，其对时间的一阶偏导数可以代数化为：</p>
+                  <div class="formula-panel">
+                    $$\\frac{\\partial}{\\partial t} \\rightarrow i\\omega$$
+                  </div>
+                  <p>代入麦克斯韦旋度方程中，消去时间偏导，转换为含有角频率的频率域微分形式：</p>
+                  <div class="formula-panel">
+                    $$\\nabla \\times \\mathbf{E} = -i\\omega\\mu \\mathbf{H}$$
+                    $$\\nabla \\times \\mathbf{H} = (\\sigma + i\\omega\\epsilon) \\mathbf{E}$$
+                  </div>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple);">
+                    <div class="highlight-box-title">频域转换的物理价值</div>
+                    <p style="font-size:13px; line-height: 1.55;">
+                      将时间偏微分转为代数乘法，把复杂的时域波动偏微分方程转化为频域的稳定代数偏微分方程。这使我们可以在单一频率点下独立求解空间响应，为频域多通道并行计算提供了先天的物理基础。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "准静态近似及其合理性证明 (Quasi-Static Approximation)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>在地球物理电磁法所涉及的频段（通常 $10^{-4}$ Hz 至 $10^4$ Hz）内，地下介质的位移电流相对于传导电流可以忽略不计，即满足：</p>
+                  <div class="formula-panel">
+                    $$\\sigma \\gg \\omega\\epsilon$$
+                  </div>
+                  <p>为了证明这一近似的合理性，我们取地壳岩石的典型下限电导率 $\\sigma = 10^{-4}$ S/m，介电常数 $\\epsilon = 10 \\epsilon_0 \\approx 8.85 \\times 10^{-11}$ F/m，频率 $f = 10^4$ Hz（高频上限）：</p>
+                  <div class="formula-panel">
+                    $$\\omega\\epsilon = 2\\pi \\times 10^4 \\times (10 \\times 8.85 \\times 10^{-12}) \\approx 5.56 \\times 10^{-6} \\, \\text{S/m}$$
+                    $$\\frac{\\sigma}{\\omega\\epsilon} \\approx \\frac{10^{-4}}{5.56 \\times 10^{-6}} \\approx 18 \\gg 1$$
+                  </div>
+                </div>
+                <div>
+                  <p>随着频率降低（如 $1$ Hz），$\\sigma / \\omega\\epsilon \\approx 1.8 \\times 10^5 \\gg 1$。因此，位移电流项 $i\\omega\\epsilon\\mathbf{E} \\rightarrow 0$ 可以完全忽略。简化的准静态旋度方程组为：</p>
+                  <div class="formula-panel" style="border-color: var(--color-crimson);">
+                    $$\\nabla \\times \\mathbf{E} = -i\\omega\\mu_0 \\mathbf{H}$$
+                    $$\\nabla \\times \\mathbf{H} = \\sigma \\mathbf{E}$$
+                    $$\\nabla \\cdot \\mathbf{E} = 0, \\quad \\nabla \\cdot \\mathbf{H} = 0$$
+                  </div>
+                  <p style="font-size:13px; color:var(--text-muted);">注：电场与磁场散度为零表明，在准静态场下，地下电场与磁场均表现为无源无散的涡旋场。</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "一维层状控制方程详细推导 (1D Helmholtz Eq)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>在一维水平层状介质中，假定电导率仅随深度 $z$ 轴变化，即 $\\sigma = \\sigma(z)$，且地表入射平面波沿垂直方向正入射（偏振方向平行地表）。</p>
+                  <p>根据这一几何均匀对称性，所有的场分量对水平面坐标 $x$ 和 $y$ 的偏导数均为零：</p>
+                  <div class="formula-panel">
+                    $$\\frac{\\partial}{\\partial x} = 0, \\quad \\frac{\\partial}{\\partial y} = 0$$
+                  </div>
+                  <p>展开旋度算子，在 $E_x, H_y$ 偏振状态下，一阶偏微分关系化为：</p>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$\\frac{d E_x}{d z} = -i\\omega\\mu_0 H_y, \\quad \\frac{d H_y}{d z} = -\\sigma(z) E_x$$
+                  </div>
+                </div>
+                <div>
+                  <p>对第一式两边再求深度 $z$ 的导数，并将第二式带入，消去磁场 $H_y$，推导出<b>一维标量亥姆霍兹方程</b>：</p>
+                  <div class="formula-panel" style="border-color: var(--color-amber); padding:12px;">
+                    $$\\frac{d^2 E_x}{dz^2} - i\\omega\\mu_0\\sigma(z) E_x = 0$$
+                  </div>
+                  <p style="font-size:13.5px; color:var(--text-secondary);">这正是层状介质阻抗解析计算的“母方程”。定义复波数 $k = \\sqrt{i\\omega\\mu_0\\sigma}$，在各均匀层内部，其电场解可写作上行波与下行波的叠加形式：$E_x(z) = A e^{-kz} + B e^{kz}$。</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "EM 波动趋肤效应与指数衰减模拟器 (Skin Depth Visualizer)",
+            html: `
+              <div class="grid-2col">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <p>电磁波在地下传导介质中传播时会发生电磁能向热能的转换，场强幅值随深度呈指数衰减。将幅值衰减到地表值的 $1/e \\approx 36.8\\%$ 处的深度定义为<b>趋肤深度 $\\delta$</b>：</p>
+                  <div class="formula-panel">
+                    $$\\delta = \\sqrt{\\frac{2}{\\omega\\mu_0\\sigma}} \\approx 503 \\sqrt{\\frac{\\rho}{f}} \\quad \\text{(m)}$$
+                  </div>
+                  
+                  <div class="control-group-widget">
+                    <span style="font-size:12px; font-weight:bold; color:var(--color-amber);">交互调节地下参数：</span>
+                    <div class="widget-label-row">
+                      <span>地电电阻率 &rho;:</span><span class="widget-val"><span id="skin-rho-val">100</span> &Omega;&middot;m</span>
+                    </div>
+                    <input type="range" class="widget-slider" id="skin-rho" min="1" max="1000" value="100" oninput="drawSkinWave()">
+                    
+                    <div class="widget-label-row" style="margin-top:5px;">
+                      <span>电磁频率 f:</span><span class="widget-val"><span id="skin-freq-val">10.0</span> Hz</span>
+                    </div>
+                    <input type="range" class="widget-slider" id="skin-freq" min="-1" max="3" step="0.1" value="1" oninput="drawSkinWave()">
+                  </div>
+                  <p style="font-size:12px; color:var(--text-muted);">拖动滑块：高频和低阻会使趋肤深度剧烈收缩，地下岩体表现为电磁屏蔽；而高阻和低频能让场深入地壳深部。</p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                  <span style="font-size:12.5px; font-weight:700; color:var(--text-secondary);">地下时谐场波动与指数衰减包络线 $e^{-z/\\delta}$</span>
+                  <div class="widget-2d-canvas-container">
+                    <canvas id="skin-wave-canvas" style="width:100%; height:100%; display:block;"></canvas>
+                  </div>
+                  <div style="font-size:12px; font-weight:600; color:var(--color-amber);" id="skin-calc-res">
+                    当前趋肤深度 &delta; = 503.0 m
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "1D Sounding Curves 阻抗与相位交互解析求解器 (1D Sounding Solver)",
+            html: `
+              <div class="grid-2col">
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <p>基于 Cagniard 递归公式，一维层状介质地表阻抗 $Z_1$ 可递归算得，视电阻率与阻抗相位公式为：</p>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$\\rho_a = \\frac{1}{\\omega\\mu_0} |Z_1|^2, \\quad \\phi = \\arctan\\left(\\frac{\\text{Im}(Z_1)}{\\text{Re}(Z_1)}\\right)$$
+                  </div>
+                  <div class="control-group-widget" style="padding:10px; gap:8px;">
+                    <span style="font-size:12px; font-weight:bold; color:var(--color-amber);">一维三层地质剖面参数调节 (H型 / K型):</span>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                      <div style="display:flex; flex-direction:column; gap:3px;">
+                        <span style="font-size:11px; color:var(--text-muted);">&rho;₁ (上层电阻率, &Omega;&middot;m)</span>
+                        <input type="range" class="widget-slider" id="1d-rho1" min="1" max="1000" value="100" oninput="run1DForwardSolver()">
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:3px;">
+                        <span style="font-size:11px; color:var(--text-muted);">h₁ (上层厚度, m)</span>
+                        <input type="range" class="widget-slider" id="1d-h1" min="50" max="2000" step="50" value="500" oninput="run1DForwardSolver()">
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:3px;">
+                        <span style="font-size:11px; color:var(--text-muted);">&rho;₂ (中层电阻率, &Omega;&middot;m)</span>
+                        <input type="range" class="widget-slider" id="1d-rho2" min="1" max="1000" value="10" oninput="run1DForwardSolver()">
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:3px;">
+                        <span style="font-size:11px; color:var(--text-muted);">h₂ (中层厚度, m)</span>
+                        <input type="range" class="widget-slider" id="1d-h2" min="50" max="3000" step="50" value="1000" oninput="run1DForwardSolver()">
+                      </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:3px; margin-top:2px;">
+                      <span style="font-size:11px; color:var(--text-muted);">&rho;₃ (地下无限深基底, &Omega;&middot;m)</span>
+                      <input type="range" class="widget-slider" id="1d-rho3" min="1" max="5000" value="500" oninput="run1DForwardSolver()">
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:center; position:relative;">
+                  <span style="font-size:12.5px; font-weight:700; color:var(--text-secondary);">视电阻率 &rho;_a 与 相位 &phi; 联测对数 Sounding 曲线</span>
+                  <div class="plot-container-svg" id="sounding-plot-wrapper">
+                    <svg class="plot-svg" id="sounding-svg" onmousemove="showSoundingTooltip(event)" onmouseleave="hideSoundingTooltip()"></svg>
+                    <div class="plot-tooltip" id="sounding-tooltip"></div>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "2D走向：TE 极化走向控制方程 (2D TE Mode)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>当地下介质只在剖面 $y-z$ 面发生电性变化，在走向 $x$ 轴方向无限延伸时（即偏导 $\\partial/\\partial x = 0$），频率域麦克斯韦旋度方程解耦为两种偏振模式。</p>
+                  <p><strong>TE 极化模式 (Transverse Electric, 电场平行走向)</strong>：</p>
+                  <p>在此模式下，电场矢量仅有平行走向的分量 $E_x$，而磁场位于 $y-z$ 面内（包含 $H_y, H_z$ 分量）。控制方程推导为二阶偏微分方程：</p>
+                  <div class="formula-panel" style="padding:15px; border-color:var(--color-royal-blue);">
+                    $$\\frac{\\partial^2 E_x}{\\partial y^2} + \\frac{\\partial^2 E_x}{\\partial z^2} + i\\omega\\mu_0\\sigma(y,z) E_x = 0$$
+                  </div>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-royal-blue);">
+                    <div class="highlight-box-title">TE 模式物理连续性</div>
+                    <p style="font-size:13px; line-height: 1.55;">
+                      根据电磁边界条件，切向电场在通过不同电阻率物性界面（例如围岩与低阻矿体接触面）时是<b>天然连续的</b>：
+                      <br>• $E_x^{(1)} = E_x^{(2)}$ 连续。
+                      <br>• 因为电场方向与突变面平行，突变面上**无面电荷积累**。
+                      <br>• 场的空间分布非常光滑，在数值离散化时误差敏感度低，对粗网格的耐受度相对较好。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "2D走向：TM 极化走向控制方程 (2D TM Mode)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p><strong>TM 极化模式 (Transverse Magnetic, 磁场平行走向)</strong>：</p>
+                  <p>在此模式下，磁场矢量仅有平行于走向的分量 $H_x$，电场矢量位于 $y-z$ 面内（包含 $E_y, E_z$ 分量）。</p>
+                  <p>由于介质电导率 $\\sigma(y,z)$ 位于微分算子内部，控制偏微分方程形式为：</p>
+                  <div class="formula-panel" style="padding:15px; border-color:var(--color-crimson);">
+                    $$\\frac{\\partial}{\\partial y}\\left(\\frac{1}{\\sigma}\\frac{\\partial H_x}{\\partial y}\\right) + \\frac{\\partial}{\\partial z}\\left(\\frac{1}{\\sigma}\\frac{\\partial H_x}{\\partial z}\\right) + i\\omega\\mu_0 H_x = 0$$
+                  </div>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-crimson);">
+                    <div class="highlight-box-title">TM 模式与界面面电荷效应</div>
+                    <p style="font-size:13px; line-height: 1.55;">
+                      电场垂直穿过不同电阻率介质面时，为了保证法向电流连续性，法向电场分量必须发生跃变：
+                      <br>• $E_n^{(2)} / E_n^{(1)} = \\sigma_1 / \\sigma_2$ 强不连续性。
+                      <br>• 交界表面会<b>集聚面电荷</b>，导致局部电场发生阶跃跳跃。
+                      <br>• 这种剧烈突变对网格分辨率要求极高，若离散网格不密，会引入严重的虚假局域畸变。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "二维 TE/TM 极化偏振动态波前模拟 (Polarization Wave Simulator)",
+            html: `
+              <div class="grid-2col">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <p>利用下方交互按钮，动态模拟一束平面电磁波向地下传播，穿过垂直突变电阻率界面的物理波前状态：</p>
+                  <div class="pol-tabs">
+                    <button class="pol-tab active" id="pol-te-btn" onclick="switchPolMode('TE')">TE 极化模式 (Ex 平行连续)</button>
+                    <button class="pol-tab" id="pol-tm-btn" onclick="switchPolMode('TM')">TM 极化模式 (Ey,Ez 面电荷跳跃)</button>
+                  </div>
+                  <div id="pol-desc-panel" style="font-size:13.5px; color:var(--text-secondary);">
+                    <!-- Injected dynamically -->
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                  <span style="font-size:12.5px; font-weight:700; color:var(--text-secondary);">垂直界面电磁偏振与连续性动态剖面</span>
+                  <div class="widget-2d-canvas-container" style="height:280px;">
+                    <canvas id="polarization-canvas" style="width:100%; height:100%; display:block;"></canvas>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "控制方程维度与 3D 地表模型几何对比 (3D Dimensions Viewer)",
+            is3DFullscreen: true,
+            canvasId: "dim-3d-canvas",
+            html: `
+              <div class="floating-panel">
+                <h3>地电模型维度几何演示</h3>
+                <p>对比一维、二维和三维地球电阻率分布模型的空间形态：</p>
+                <div class="pol-tabs">
+                  <button class="pol-tab active" id="dim-1d-btn" onclick="switchDim3D('1D')">1D 水平层状</button>
+                  <button class="pol-tab" id="dim-2d-btn" onclick="switchDim3D('2D')">2D 走向延伸</button>
+                  <button class="pol-tab" id="dim-3d-btn" onclick="switchDim3D('3D')">3D 任意复杂</button>
+                </div>
+                <div id="dim-detail-text" style="font-size:13px; line-height:1.5;">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+            `
+          }
+        ]
+      },
+      // Module 1: 数值方法综述
+      {
+        module: 1,
+        moduleName: "数值方法综述",
+        slides: [
+          {
+            title: "不同大地电磁正演计算方法综述",
+            isTitleSlide: true,
+            html: `
+              <h1>不同大地电磁正演计算方法综述</h1>
+              <h3>有限差分 (FDM)、有限元 (FEM)、积分方程 (IEM) 与有限体积 (FVM) 等离散空间的求解技术</h3>
+              <p style="color:var(--text-secondary); max-width: 800px; margin: 0 auto 30px auto; font-size:15px;">面对含有复杂山地地形、各向异性以及任意不规则三维异常体的地球介质，控制方程无法取得解析解。必须通过离散数学手段将连续空间偏微分方程转化为大型复代数系统。本章详细对比主流数值求解器及其核心离散法则。</p>
+              <div class="title-slide-meta">
+                <div class="meta-item">
+                  <div class="meta-label">汇报模块</div>
+                  <div class="meta-value">第二部分：数值方法</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">核心算法</div>
+                  <div class="meta-value">FDM / FEM / IE / FVM</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">前沿技术</div>
+                  <div class="meta-value">Yee交错网格 / 边单元 / PML</div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "数值离散化核心概念 (Discrete Space Overview)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>偏微分控制方程（波导或亥姆霍兹）属于无限维度的连续系统。为了能交给计算机计算，必须引入<b>离散化算子</b>，将空间切分为网格。</p>
+                  <p>其核心终极目标是将偏微分算子映射，最终转化为线性代数方程组：</p>
+                  <div class="formula-panel">
+                    $$\\mathbf{A} \\mathbf{x} = \\mathbf{b}$$
+                  </div>
+                  <p>其中 $\\mathbf{A}$ 代表取决于网格几何与介质物性电导率的<b>复系数稀疏刚度矩阵</b>，$\\mathbf{x}$ 为待求解的网格格点或棱边上的电磁场分量矢量，$\\mathbf{b}$ 为外加场源项。</p>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple);">
+                    <div class="highlight-box-title">数值离散的三大挑战</div>
+                    <p style="font-size:13px; line-height: 1.55;">
+                      1. <strong>地形拟合度</strong>：地表起伏山脊对边界精度的影响。
+                      <br>2. <strong>系数矩阵稀疏度与结构度</strong>：直接决定了线性方程组求解内存占用与寻址时间。
+                      <br>3. <strong>物理守恒约束</strong>：在离散数学层面上，是否能严格保证电磁场的电荷及通量物理守恒，防止计算发散。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "有限差分法与 Taylor 展开 (Finite Difference Method)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>有限差分法 (FDM) 是经典且最成熟的数值形式。其基本思想是采用正交直角结构网格剖分空间，并基于 Taylor 级数展开，用差商逼近偏偏导数算子：</p>
+                  <p>若将连续函数在格点 $z_i$ 附近展开，其一阶导数可用相邻中心差商估计：</p>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$\\left. \\frac{d E_x}{d z} \\right|_{z_i} \\approx \\frac{E_x(z_i + \\Delta z/2) - E_x(z_i - \\Delta z/2)}{\\Delta z}$$
+                  </div>
+                  <p>对于二阶导数形式（一维 Helmhotz 方程），其二阶差分格式为：</p>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$\\frac{E_{x,i+1} - 2E_{x,i} + E_{x,i-1}}{\\Delta z^2} - i\\omega\\mu_0\\sigma_i E_{x,i} = 0$$
+                  </div>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-crimson);">
+                    <div class="highlight-box-title">差分法致命缺陷：阶梯效应</div>
+                    <p style="font-size:13px; line-height: 1.5;">
+                      由于 FDM 强烈绑定于正交直角坐标系，网格只能沿平行和垂直方向延伸。
+                      <br>遇到山脊地形或倾斜断层线时，只能使用锯齿状的“阶梯”进行生硬近似，导致突变边界产生大量虚假虚假诱导电荷，高频段严重失真。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "Yee 交错差分网格物理对齐 (Yee Staggered Grid)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>直接在同一网格节点上计算全部场分量，会导致中心差分公式中的“奇偶格点失联”与不收敛问题。Yee (1966) 设计了交错晶胞空间：</p>
+                  <ul>
+                    <li><strong>电场分量 $E_x, E_y, E_z$</strong>：定义在三维立方网格的<b>棱边中点</b>。</li>
+                    <li><strong>磁场分量 $H_x, H_y, H_z$</strong>：定义在三维立方网格的<b>面中心点</b>。</li>
+                  </ul>
+                  <p style="font-size:13.5px; margin-top:10px; color:var(--text-secondary);">每一个磁场矢量恰好被四个电场环绕，在三维几何上完美对应法拉第电磁感应的环路积分：</p>
+                  <div class="formula-panel">
+                    $$\\oint_{\\partial S} \\mathbf{E} \\cdot d\\mathbf{l} = -i\\omega\\mu_0 \\iint_S \\mathbf{H} \\cdot d\\mathbf{s}$$
+                  </div>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-yellow);">
+                    <div class="highlight-box-title">散度为零物理守恒约束</div>
+                    <p style="font-size:13px; line-height: 1.55;">
+                      交错网格的一大几何优势在于，不仅可以计算旋度，还隐式且严格地满足了电磁场高斯磁通定律（$\\nabla \\cdot \\mathbf{B} = 0$）。在数值离散层面上阻止了电磁能量在长距离传播中的虚假辐射发散。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "3D Yee 晶胞空间交互模型 (3D Yee Grid)",
+            is3DFullscreen: true,
+            canvasId: "yee-3d-canvas",
+            html: `
+              <div class="floating-panel">
+                <h3>3D Yee 晶胞空间交互模型</h3>
+                <p>鼠标旋转、滚轮缩放。观察电磁场在空间网格中的错开几何排列：</p>
+                <div class="yee-controls">
+                  <label class="yee-cb-label"><input type="checkbox" id="show-e-fields" checked onchange="toggleYeeE()"> 显示电场分量 <span class="yee-e-color">E (12棱边中点, 红色)</span></label>
+                  <label class="yee-cb-label" style="margin-top:5px;"><input type="checkbox" id="show-h-fields" checked onchange="toggleYeeH()"> 显示磁场分量 <span class="yee-h-color">H (6面中心点, 蓝色)</span></label>
+                </div>
+                <p style="font-size:11.5px; color:var(--text-muted);">在数值求解时，这种拓扑结构能够将安培环路定理与法拉第定律的中心差分表达完美统一。</p>
+              </div>
+            `
+          },
+          {
+            title: "有限单元法变分原理与非结构网格 (Finite Element Method)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>有限单元法 (FEM) 摒弃了偏导数差商近似，通过寻变分能量泛函极值或使用<b>加权残量积分法</b>（如 Galerkin 法）在局部单元内积分：</p>
+                  <p>对矢量 Helmholtz 方程乘以加权测试基函数 $\\mathbf{N}_i$ 并在计算域内积分：</p>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$\\int_V \\mathbf{N}_i \\cdot \\left( \\nabla \\times \\nabla \\times \\mathbf{E} + i\\omega\\mu_0\\sigma \\mathbf{E} \\right) dV = 0$$
+                  </div>
+                  <p>利用分部积分降阶展开，得到弱积分形式，装配所得总体刚度矩阵的系数为：</p>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$K_{ij} = \\int_V \\left[ (\\nabla \\times \\mathbf{N}_i) \\cdot (\\nabla \\times \\mathbf{N}_j) + i\\omega\\mu_0\\sigma \\mathbf{N}_i \\cdot \\mathbf{N}_j \\right] dV$$
+                  </div>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple);">
+                    <div class="highlight-box-title">FEM的地形适应性</div>
+                    <p style="font-size:13px; line-height: 1.5;">
+                      不同于差分，有限元能采用非结构四面体、变体六面体剖分网格。
+                      <br>它就像橡皮泥，完美贴合山脊、峡谷起伏以及倾斜交错层断裂带，没有“阶梯锯齿效应”，保障了复杂地形下的精度。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "Nédélec 矢量边单元与消除伪解 (Edge Elements)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>早期在有限元中，电磁场物理分量直接定义在网格节点上（节点单元 Node-based），假定场沿三轴分量完全连续。</p>
+                  <div class="highlight-box" style="border-left-color: var(--color-crimson); margin-bottom: 10px;">
+                    <div class="highlight-box-title">节点元的致命缺陷：伪解</div>
+                    <p style="font-size:12px; line-height: 1.4; margin:0;">
+                      根据麦克斯韦边界条件，在介质突变面上电场的法向分量高度不连续。
+                      <br>节点元强制要求节点处全部连续，在数学上违背了物理边界，引发大量的虚假非零伪解发散。
+                    </p>
+                  </div>
+                  <p><strong>Nédélec 边单元</strong>将待求自由度放置在<b>边 (Edges)</b> 上，基函数形式为：</p>
+                  <div class="formula-panel" style="padding:8px;">
+                    $$\\mathbf{N}_{ij} = L_i \\nabla L_j - L_j \\nabla L_i$$
+                  </div>
+                </div>
+                <div>
+                  <p>该基函数使得电场仅在<b>切向连续，法向允许跃变阶跃</b>，完美匹配电磁突变边界，在数学上彻底清除了伪解干扰，成为现代有限元三维电磁模拟的基石。</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "3D 自适应有限元网格地形剖切 (3D FEM Mesh)",
+            is3DFullscreen: true,
+            canvasId: "fem-3d-canvas",
+            html: `
+              <div class="floating-panel">
+                <h3>3D 自适应有限元网格剖分</h3>
+                <p>鼠标旋转缩放观察。拉动下方切割深度滑块切开山脊剖面，查看地下自适应四面体网格：</p>
+                <div class="control-group-widget">
+                  <div class="widget-label-row">
+                    <span>剖面剖切深度:</span><span class="widget-val" id="fem-clip-val">0.0</span>
+                  </div>
+                  <input type="range" class="widget-slider" id="fem-clip-slider" min="-5" max="5" step="0.2" value="0" oninput="updateFEMClip()">
+                </div>
+                <p style="font-size:11.5px; color:var(--text-muted);">• 灰色网架：非结构四面体有限元空间网格。<br>• 红色球体：埋藏于浅部起伏地表下方的低阻矿体异常区。</p>
+              </div>
+            `
+          },
+          {
+            title: "积分方程法与体积散射理论 (Integral Equation Method)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>积分方程法 (IEM) 引入背景模型格林函数 $\\mathbf{G}_e(\\mathbf{r}, \\mathbf{r}')$，将总场分为背景解析场 $\\mathbf{E}_b$ 与仅在异常区产生折射的二次散射场 $\\mathbf{E}_s$：</p>
+                  <div class="formula-panel" style="padding:15px; border-color:var(--color-forest-green);">
+                    $$\\mathbf{E}(\\mathbf{r}) = \\mathbf{E}_b(\\mathbf{r}) + \\int_{V_{anomaly}} \\mathbf{G}_e(\\mathbf{r}, \\mathbf{r}') \\cdot \\Delta\\sigma(\\mathbf{r}') \\mathbf{E}(\\mathbf{r}') dV'$$
+                  </div>
+                  <p>其中 $\\Delta\\sigma$ 为异常体与背景围岩的电导率差值。</p>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-forest-green);">
+                    <div class="highlight-box-title">IEM独特优势与致命劣势</div>
+                    <p style="font-size:13px; line-height: 1.55;">
+                      • <strong>优点</strong>：<b>只对局部异常体剖分网格</b>，背景和巨大的空气层完全解析表达，无需外边界截断匹配层。网格总自由度极小。
+                      <br>• <strong>缺点</strong>：产生的刚度矩阵为**全满致密复矩阵**（非稀疏）。存储与乘法计算复杂度高达 $O(N^3)$，异常体网格点数稍大即因显存耗尽溢出而无法计算。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "有限体积法与通量严格守恒 (Finite Volume Method)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>有限体积法 (FVM) 介于有限单元与有限差分之间。它直接从麦克斯韦积分方程出发，对局部划分的各个控制体积元 (Control Volume) 进行场量通量平衡积分：</p>
+                  <div class="formula-panel" style="padding:15px; border-color:var(--color-purple);">
+                    $$\\oint_{\\partial V_i} \\mathbf{H} \\cdot d\\mathbf{s} = \\iiint_{V_i} \\sigma \\mathbf{E} \\cdot d\\mathbf{v}$$
+                  </div>
+                  <p>每一个局部立方或非结构单元流出的电磁通量严格等于相邻单元流入的电磁通量。</p>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple);">
+                    <div class="highlight-box-title">高电阻率对比度界面的守恒健壮性</div>
+                    <p style="font-size:13px; line-height: 1.55;">
+                      由于在控制体积面上强加了通量守恒约束，FVM 在处理如海水与高阻火成岩接触面（电导率相差高达几个数量级）这类极端突变界面时，表现出比节点有限元或差分法更好的收敛性与数值抗震度，结果极为平稳。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "空间网格类型剖分策略对比 (Grid Strategies)",
+            html: `
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <p>不同数值法依赖于不同空间剖分几何，网格类型是决定算法开销的硬约束：</p>
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>网格类型</th>
+                        <th>适用方法</th>
+                        <th>地形贴合度</th>
+                        <th>矩阵结构特征</th>
+                        <th>剖分生成难度</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>正交结构网格 (Orthogonal Grid)</strong></td>
+                        <td>FDM, FVM</td>
+                        <td>较差（产生锯齿阶阶梯）</td>
+                        <td>高度规律，稀疏多对角阵，寻址极快</td>
+                        <td>极低，自动化分</td>
+                      </tr>
+                      <tr>
+                        <td><strong>四面体非结构网格 (Tetrahedral Mesh)</strong></td>
+                        <td>FEM, FVM</td>
+                        <td>完美（贴合任意起伏山地）</td>
+                        <td>无规律，稀疏度视连通性而定</td>
+                        <td>中等，易产生退化畸变单元</td>
+                      </tr>
+                      <tr>
+                        <td><strong>六面体非结构网格 (Hexahedral Mesh)</strong></td>
+                        <td>FEM</td>
+                        <td>良好（计算精度极高）</td>
+                        <td>中等规律，自由度装配比四面体少</td>
+                        <td>极高，全自动网格生成仍是学术难点</td>
+                      </tr>
+                      <tr>
+                        <td><strong>八叉树网格 (Octree Adaptive Grid)</strong></td>
+                        <td>FDM, FEM</td>
+                        <td>中等（局部自适应加密）</td>
+                        <td>半规律，存在网格挂点悬点处理</td>
+                        <td>低，兼顾效率与局部几何贴合</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "自适应有限元网格加密技术 (AFEM)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>电磁场的波动具有趋肤效应：浅地表高频波段变化剧烈需极密网格，深部低频波段探测范围大需要极广计算域。同一套固定网格难以兼顾全频段。</p>
+                  <p>自适应有限元 (AFEM) 建立在<b>后验残差误差估计</b>基础上，进行 $h-$型自动剖分：</p>
+                  <div class="formula-panel">
+                    $$\\eta_K^2 = h_K^2 \\| R(\\mathbf{E}_h) \\|^2_{0,K} + \\sum_{f \\in \\partial K} h_f \\| \\left[ \\mathbf{n} \\times (\\nabla \\times \\mathbf{E}_h) \\right] \\|^2_{0,f}$$
+                  </div>
+                  <p style="font-size:12.5px; color:var(--text-secondary);">计算粗网格局部场量在相邻面切向梯度的突变残差，找出局部误差超标的单元并自动加密。</p>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-royal-blue);">
+                    <div class="highlight-box-title">自适应自发加密闭环逻辑</div>
+                    <p style="font-size:13px; line-height: 1.6; margin:0;">
+                      1. 在初始粗糙网格上进行第一次正演求解。
+                      <br>2. 通过误差指示器 $\\eta_K$ 评估每一个单元的物理守恒偏离度。
+                      <br>3. 标记误差最大的前 $30\\%$ 单元，执行单元裂变切分细化。
+                      <br>4. 重建局部邻接刚度，重新求解，直至全局误差收敛。
+                      <br>这彻底解放了科学家手工设计网格的繁琐过程。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "数值边界条件处理与 PML 衰减层 (Boundary Conditions)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>半无限大地球物理空间必须在有限边界上进行截断。常用截断法有：</p>
+                  <ul>
+                    <li><strong>第一类 Dirichlet 边界条件</strong>：直接强制设定边界上的电磁场为一维背景解析值：$\\mathbf{E}_{boundary} = \\mathbf{E}_{1D}$。</li>
+                    <li><strong>第二类 Neumann 边界条件</strong>：设定边界上的场法向导数为零（深部基底常采用）：$\\frac{\\partial \\mathbf{E}}{\\partial n} = 0$。</li>
+                  </ul>
+                  <p><strong>PML (完美匹配层, Absorbing Boundary)</strong>：</p>
+                  <p>在计算域外围包裹数层复各向异性耗散层，乘上复伸缩衰减张量：</p>
+                </div>
+                <div>
+                  <div class="formula-panel" style="border-color:var(--color-amber);">
+                    $$\\mathbf{S}(z) = \\text{diag}(s_x, s_y, s_z), \\quad s_j = 1 - i\\frac{\\sigma_{PML}(z)}{\\omega\\epsilon_0}$$
+                  </div>
+                  <p style="font-size:13.5px; color:var(--text-secondary);">这能使得出射电磁波在进入 PML 后发生无反射的纯指数衰减耗散，从物理上阻断人工物理截断产生的反射波干扰，可大幅收缩求解网格包络圈。</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "大型稀疏复矩阵求解器引擎 (Sparse Linear Solvers)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>离散后得到的三维刚度系统 $A\\mathbf{x}=\\mathbf{b}$ 具有百万级维度，且矩阵高度稀疏且病态。常用两类求解器：</p>
+                  <ul>
+                    <li><strong>直接解法 (Direct Solvers - MUMPS, PARDISO)</strong>
+                      <br>基于 LU/LDL 分解。
+                      <br>• <strong>优点</strong>：极其健壮，多极化场多源计算只需一次分解。
+                      <br>• <strong>缺点</strong>：内存占用随模型规模呈几何级数爆炸，极易超出物理内存极限。
+                    </li>
+                    <li><strong>迭代解法 (Iterative Solvers - BiCGSTAB, GMRES)</strong>
+                      <br>基于 Krylov 子空间投影。
+                      <br>• <strong>优点</strong>：内存占用极小，可计算超大模型。
+                      <br>• <strong>缺点</strong>：面对高物性对比度矩阵时极易产生发散不收敛，需深度依赖预条件子。
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-yellow);">
+                    <div class="highlight-box-title">预条件子方程</div>
+                    <p style="font-size:13px; line-height: 1.55; margin:0;">
+                      迭代求解器必须左乘一个逆矩阵的近似估计 $M^{-1}$：
+                      $$M^{-1} A \\mathbf{x} = M^{-1} \\mathbf{b}$$
+                      使得矩阵的条件数显著降低，将迭代步数缩减 90% 以上。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "求解器收敛速度模拟器 (Solver Convergence Simulator)",
+            html: `
+              <div class="grid-2col">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <p>模拟在大地电磁高低阻异常极度病态阵下，求解器与预条件子对残差收敛速率的响应规律：</p>
+                  <div class="control-group-widget" style="gap:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="font-size:12px;">求解器路线:</span>
+                      <select class="widget-select" id="conv-solver">
+                        <option value="direct">Direct LU (Pardiso)</option>
+                        <option value="bicg">BiCGSTAB (迭代法)</option>
+                        <option value="gmres">GMRES (迭代法)</option>
+                      </select>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="font-size:12px;">预条件子 (Preconditioner):</span>
+                      <select class="widget-select" id="conv-prec">
+                        <option value="amg">AMG (代数多网格)</option>
+                        <option value="ilu">ILU (不完全LU分解)</option>
+                        <option value="none">None (无预条件)</option>
+                      </select>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="font-size:12px;">模型电阻率对比度 ($C_\\rho$):</span>
+                      <select class="widget-select" id="conv-contrast">
+                        <option value="low">低对比 (10:1)</option>
+                        <option value="med">中等对比 (1000:1)</option>
+                        <option value="high">强突变病态 (10^6:1)</option>
+                      </select>
+                    </div>
+                    <button class="btn-action-widget" style="margin-top:5px;" onclick="runConvergenceSim()">▶ 运行求解模拟</button>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">稀疏复系统残差下降曲线 (L2-Norm Residual vs Steps)</span>
+                  <div class="plot-container-svg" style="height:250px;">
+                    <svg class="plot-svg" id="conv-svg"></svg>
+                  </div>
+                  <div id="conv-status-text" style="font-size:11px; font-weight:600; color:var(--color-amber); text-align:center; min-height:30px;">
+                    等待启动求解器...
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "并行计算加速与现代模型降阶技术 (Parallel & ROM)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-royal-blue); margin-top:0;">
+                    <div class="highlight-box-title">频率间天然多频并行 (MPI)</div>
+                    <p style="font-size:12.5px; line-height: 1.55;">
+                      由于大地电磁各个频率点之间的控制方程是完全独立解耦的，这使得三维正演非常容易在 MPI 架构上进行线性分配并行。将 40 个频点直接分配给 40 个 CPU 计算节点，可实现近 100% 的线性加速比。
+                    </p>
+                  </div>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple); margin-top:10px;">
+                    <div class="highlight-box-title">GPU 线程级乘法加速 (SpMV)</div>
+                    <p style="font-size:12.5px; line-height: 1.55;">
+                      将迭代求解器中耗时占 90% 的稀疏矩阵-向量乘法 ($SpMV$) 运算迁移至 GPU 的 CUDA 核中，利用 GPU 的超高内存带宽，可获得 15x 至 30x 的单卡计算加速。
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <p><strong>模型降阶技术 (ROM - Reduced Order Model)</strong>：</p>
+                  <p>在大规模反演迭代中，地下地电结构只是被局部微调更新，但传统的正演程序却要在每次迭代时重新装配和全尺寸求解百万维方程组，造成严重算力浪费。</p>
+                  <p>ROM 基于本征正交分解 (POD)，从历史流场特征中提取低维空间主成分（如 30 个 POD 基向量 $\\mathbf{\\Phi}$），将新的大型方程投影至此 30 维超低空间：</p>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$(\\mathbf{\\Phi}^T \\mathbf{A} \\mathbf{\\Phi}) \\mathbf{y} = \\mathbf{\\Phi}^T \\mathbf{b}$$
+                  </div>
+                  <p style="font-size:13px; color:var(--text-muted);">这避开了巨大刚度矩阵的直接分解，使得计算时间从小时级骤降至亚秒毫秒级。</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "三维各向异性与地质选型差异 (Anisotropy & Choice)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>真实地下岩石通常存在各向异性（如沉积岩、断裂变质带）。三维各向异性模拟中，介质电导率 $\\sigma$ 从标量退化为 $3 \\times 3$ 对称张量：</p>
+                  <div class="formula-panel" style="padding:8px;">
+                    $$\\boldsymbol{\\sigma} = \\begin{bmatrix} \\sigma_{xx} & \\sigma_{xy} & \\sigma_{xz} \\\\ \\sigma_{yx} & \\sigma_{yy} & \\sigma_{yz} \\\\ \\sigma_{zx} & \\sigma_{zy} & \\sigma_{zz} \\end{bmatrix}$$
+                  </div>
+                  <p style="font-size:13px; color:var(--text-secondary);">这会导致电场各分量产生强交叉耦合（如本不相关的 $E_x, E_y$ 互相影响），使得系统矩阵高度非对称且极其病态，迭代法几乎不收敛。</p>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-amber);">
+                    <div class="highlight-box-title">工业界与学术界的选型博弈</div>
+                    <p style="font-size:13px; line-height: 1.6; margin:0;">
+                      • <strong>工业界：效率为王</strong>
+                      <br>在大规模三维反演生产中（需要数十万次正演调用），FDM + 结构化八叉树网格（如著名软件 ModEM）仍为绝对主流，以速度求反演效率。
+                      <br>• <strong>学术界：精度至上</strong>
+                      <br>为了刻画俯冲带地形起伏、极细碎断层导致的畸变现象，非结构化自适应 FEM（自适应加密边元格式）成为深部结构研究的首选。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "四大数值算法性能多维评级雷达图 (Method Comparison)",
+            html: `
+              <div class="grid-2col">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <p>交互对比不同数值离散引擎在地球物理正演计算中的性能特征。勾选下方算法进行<b>雷达图叠加对比</b>：</p>
+                  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600; cursor:pointer;"><input type="checkbox" id="chk-fdm" checked onchange="drawRadarChart()"> 有限差分 (FDM)</label>
+                    <label style="display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600; cursor:pointer;"><input type="checkbox" id="chk-fem" checked onchange="drawRadarChart()"> 有限单元 (FEM)</label>
+                    <label style="display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600; cursor:pointer;"><input type="checkbox" id="chk-ie" onchange="drawRadarChart()"> 积分方程 (IEM)</label>
+                    <label style="display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600; cursor:pointer;"><input type="checkbox" id="chk-fvm" onchange="drawRadarChart()"> 有限体积 (FVM)</label>
+                  </div>
+                  <div id="radar-desc-panel" style="font-size:13px; color:var(--text-secondary); line-height:1.5; min-height:80px;">
+                    勾选算法以在雷达图中显示多边形并查阅详细选型建议。
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">算法性能评级五轴图 (越偏外圈性能越强)</span>
+                  <div class="plot-container-svg" style="height:250px; width:250px;">
+                    <svg class="plot-svg" id="radar-svg" viewBox="0 0 200 200"></svg>
+                  </div>
+                </div>
+              </div>
+            `
+          }
+        ]
+      },
+      // Module 2: AI 与 Agent 应用
+      {
+        module: 2,
+        moduleName: "AI 与 Agent 应用",
+        slides: [
+          {
+            title: "人工智能在大地电磁正演计算中的应用",
+            isTitleSlide: true,
+            html: `
+              <h1>人工智能在大地电磁正演中的应用</h1>
+              <h3>从纯黑盒预测到物理信息约束，多 Agent 协同工作流系统实况演示</h3>
+              <p style="color:var(--text-secondary); max-width: 800px; margin: 0 auto 30px auto; font-size:15px;">深度学习的崛起为地球物理正演计算带来了“毫秒级计算”的巨大变革，但也伴随着违反麦克斯韦定律等“黑箱物理幻觉”的安全隐患。本章重点探索结合先验方程的物理智能算法，以及下一代全自主地学多智能体 (Agent Workflows) 系统的运行蓝图。</p>
+              <div class="title-slide-meta">
+                <div class="meta-item">
+                  <div class="meta-label">汇报模块</div>
+                  <div class="meta-value">第三部分：人工智能</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">AI模型</div>
+                  <div class="meta-value">PINN / FNO 算子学习</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">系统架构</div>
+                  <div class="meta-value">14-Agent 闭环在环协作</div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "什么是智能体 (Agent) 及其核心能力",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p><strong>智能体 (Agent)</strong> 是以大语言模型 (LLM) 为推理决策核心，具备对特定物理任务独立拆解步骤、自主调用地学工具、根据误差结果自我修正并返工计算的智能实体系统。</p>
+                  <p>传统的地球物理正演软件是纯静默被动的，而 Agent 系统具备以下四大核心推理能力：</p>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-amber);">
+                    <div class="highlight-box-title">Agent 核心能力架构</div>
+                    <p style="font-size:13px; line-height: 1.6; margin:0;">
+                      • <strong>逻辑大脑 (Planning)</strong>：将抽象的地质意图（如“计算阿尔卑斯山脉深层热源”）拆解为网格剖分、求解器路由等结构化任务。
+                      <br>• <strong>状态记忆 (Memory)</strong>：维护前次刚度装配、残差历史，并在返工时保留上下文。
+                      <br>• <strong>专业工具库 (Skills)</strong>：自主调用 FEM 求解、AI Surrogate 预测、OOD 检验等工具。
+                      <br>• <strong>自我诊断 (Self-Correction)</strong>：发现 QC 未通过时，能分析定位错误源并自动实施网格加密重算，无需人类介入。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "地球物理神经网络三大范式演进 (AI Paradigms)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>人工智能正演在大地电磁中经历了三种范式的演进，以解决速度、泛化力与物理一致性的冲突：</p>
+                  <ul>
+                    <li><strong>01. 纯数据驱动拟合 (Pure Data-Driven CNN/U-Net)</strong>
+                      <br>建立地电模型与地表响应曲线的映射。虽然预测仅耗时 &lt;10ms，但违背物理先验，预测极易失真。
+                    </li>
+                    <li><strong>02. 物理信息神经网络 (PINNs)</strong>
+                      <br>将前述 Maxwell/Helmholtz 微分方程残差引入 Loss 约束，以物理方程为监督教师：
+                    </li>
+                  </ul>
+                  <div class="formula-panel" style="padding:10px;">
+                    $$\\mathcal{L}_{total} = \\lambda_1 \\mathcal{L}_{data} + \\lambda_2 \\mathcal{L}_{PDE} + \\lambda_3 \\mathcal{L}_{BC}$$
+                  </div>
+                </div>
+                <div>
+                  <ul>
+                    <li><strong>03. 神经算子学习 (Fourier Neural Operator - FNO)</strong>
+                      <br>学习函数空间之间的映射。利用傅里叶域积分核，FNO 能在复无限维空间上直接映射连续场，**彻底摆脱了网格尺寸与分辨率的限制**。
+                    </li>
+                  </ul>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple); margin-top:15px;">
+                    <div class="highlight-box-title">物理正则损失 $\\mathcal{L}_{PDE}$ 表达式</div>
+                    <p style="font-size:12.5px; line-height:1.5;">
+                      对预测电场 $\\mathbf{E}_{pred}$ 实时求导检验：
+                      $$\\mathcal{L}_{PDE} = \\| \\nabla \\times \\nabla \\times \\mathbf{E}_{pred} + i\\omega\\mu_0\\sigma\\mathbf{E}_{pred} \\|^2_{L^2(V)}$$
+                      神经网络在逼近数据点的同时不断最小化 PDE 残差，保障预测响应在地球物理上的严谨性。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "数值正演作为 AI 的“数据母机”与 OOD 风险控制",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p><strong>数值算法为 AI 的数据母机</strong>：地学 AI 无法像人脸识别那样获取数百万张实地测量的标注照片。高精度 FDM/FEM 三维正演是批量制造“三维电阻率-多频点电磁响应”训练集唯一的安全来源。</p>
+                  <p><strong>OOD (分布外检测) 防御防御机制</strong>：</p>
+                  <p>当输入的地下电阻率模型超越了 AI 网络的训练集限制时，黑盒 AI 会产生严重的虚假响应。</p>
+                  <p>系统会在输入端自动计算输入模型特征向量 $\\mathbf{z}$ 与训练基的<b>加权马氏距离</b>：</p>
+                </div>
+                <div>
+                  <div class="formula-panel">
+                    $$D_{OOD} = \\sqrt{(\\mathbf{z} - \\boldsymbol{\mu})^T \\boldsymbol{\Sigma}^{-1} (\\mathbf{z} - \\boldsymbol{\mu})}$$
+                  </div>
+                  <div class="highlight-box" style="border-left-color: var(--color-crimson);">
+                    <div class="highlight-box-title">马氏距离防御警报</div>
+                    <p style="font-size:13px; line-height: 1.5; margin:0;">
+                      一旦 $D_{OOD} > 3.0$（即超越训练均值三个标准差之外），系统红灯报警，**阻断神经网络输出**，将此高难度计算强制路由给传统 FEM 数值引擎。这在物理可信度与计算效率之间建立了坚实的防卫环路。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "AI 正演分布外 (OOD) 检测防御模拟器 (OOD Defensive Simulator)",
+            html: `
+              <div class="grid-2col">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <p>实时模拟地电模型复杂度变化对 AI 泛化安全性的影响。拖动滑块增加电阻率对比度或地形坡度：</p>
+                  <div class="control-group-widget" style="gap:8px;">
+                    <div class="widget-label-row">
+                      <span>电阻率最大对比度 (Contrast):</span><span class="widget-val" id="ood-contrast-val">100 : 1</span>
+                    </div>
+                    <input type="range" class="widget-slider" id="ood-contrast" min="1" max="6" step="0.1" value="2" oninput="runOODSimulation()">
+                    
+                    <div class="widget-label-row" style="margin-top:5px;">
+                      <span>地表最大坡度 (Slope):</span><span class="widget-val" id="ood-slope-val">5 &deg;</span>
+                    </div>
+                    <input type="range" class="widget-slider" id="ood-slope" min="0" max="45" step="1" value="5" oninput="runOODSimulation()">
+                  </div>
+                  <div class="ood-alarm-banner" id="ood-alarm">
+                    🚨 警报: 模型超出训练集分布 (OOD)！强制路由至有限元数值正演
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">特征隐空间模型分布图 (Ellipsoid 代表 3&sigma; 训练分布)</span>
+                  <div class="plot-container-svg" style="height:250px;">
+                    <svg class="plot-svg" id="ood-svg"></svg>
+                  </div>
+                  <div id="ood-status-text" style="font-size:11.5px; font-weight:600; color:var(--text-secondary); text-align:center;">
+                    AI 适用度评分: 0.95 (模型安全，启动快速AI通道)
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "多智能体 (Agent) 正演协同拓扑架构 (14-Agent Blueprint)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>为了攻克多频点、多尺度以及有专家在环的高保真三维模拟，我们摒弃了传统的单代码块设计，构建了由 <b>14 个专业 Agent</b> 协同协作的拓扑运行架构：</p>
+                  <p><strong>三阶段、双闭环在环协同：</strong></p>
+                  <ul>
+                    <li><strong>核心控制与支撑</strong>：总控调度核心、物理先验与知识库、日志版本治理智能体。</li>
+                    <li><strong>阶段一：感知规划</strong>：输入任务标准化、模型难度诊断、网格离散化、求解路由策略配置。</li>
+                  </ul>
+                </div>
+                <div>
+                  <ul>
+                    <li><strong>阶段二：高效求解</strong>：AI 代理模型、传统高保正演、多保真数据融合。</li>
+                    <li><strong>阶段三：质控交付</strong>：验证质控 (QC Gate)、不确定性量化 (UQ)、专家在环审查、交付成果打包发布。</li>
+                  </ul>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple); margin-top:10px;">
+                    <div class="highlight-box-title">协作流程价值</div>
+                    <p style="font-size:12.5px; line-height: 1.5; margin:0;">
+                      这 14 个 Agent 不再采用杂乱的自然语言聊天，而是通过严格的数据通信协议 (Schema JSON) 进行数据交互，消除了传统大模型的口头幻觉与逻辑失控。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "Agent 数据交互协议 (Structured Data Protocol)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p>为保障 14 个 Agent 在协作时精确无误，各个节点之间传递结构化 JSON 消息体，消除数据丢失与解析错乱风险。以下是四种核心数据协议：</p>
+                  <ul>
+                    <li><strong>TaskSpec (正演任务规范)</strong>：定义地下三维地电模型路径、测点坐标、频段表、目标相对精度上限及可用核数算力资源。</li>
+                    <li><strong>ModelDiagnosisReport (诊断报告)</strong>：诊断最大最小电阻率对比度、地形突变指标、最大深度趋肤范围、以及当前 AI 泛化的马氏距离。</li>
+                  </ul>
+                </div>
+                <div>
+                  <ul>
+                    <li><strong>MeshPlan (网格离散规划)</strong>：指定网格类型（FDM结构/FEM自适应）、计算域边界扩展公里数、精细靶区加密盒子、以及 PML 吸收层层数。</li>
+                    <li><strong>SolverPlan (求解策略)</strong>：选定计算路由（AI直通、数值计算或多保真）、主求解器、迭代预条件子配置、以及 10% 随机高保真抽检方案。</li>
+                  </ul>
+                  <p style="font-size:12.5px; color:var(--text-muted); margin-top:10px;">通过这些数据约束，任何 Agent 在被唤醒时都能精准地解析前置状态，实现计算的可复现性。</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "核心 Agent 详解 1：总控调度核心 Agent (Orchestrator)",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">👑 系统定位：Orchestrator Agent</div>
+                  <div class="agent-sheet-content">
+                    整个正演系统的“项目经理”与状态机管理器。它不负责具体的地球物理公式离散或神经网络运算，专门负责计算步骤拆解、分配状态锁、调度子 Agent 并在 QC 失败时启动自动返工路由。
+                    <br><br>
+                    <strong>核心数学决策逻辑：</strong>
+                    $$a_t = \\pi_{ctrl}(s_t)$$
+                    根据全局运行状态 $s_t$（包括当前计算误差、是否超限、AI失效标志等），在动作集 $\\mathcal{A} = \\{\\text{diagnose, mesh, route_solver, run_surrogate, run_numerical, qc, uq, review, deliver}\\}$ 中路由下一步最经济的计算动作 $a_t$。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">📦 结构化数据接口 (JSON Schema)</div>
+                  <div class="agent-sheet-content">
+                    <strong>结构化 Input 消息体：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:11px; background:#f6efe2; padding:6px; border-radius:4px; margin-top:5px;">
+{
+  "task_spec": "TS_2026_A",
+  "active_step": "verification_qc",
+  "last_qc_report": {
+    "passed": false,
+    "error_loc": [1200.0, -500.0],
+    "fail_reason": "high_freq_error_exceeded"
+  }
+}</pre>
+                    <strong>执行规则 (Rules)：</strong>
+                    <br>1. 若 ModelDiagnosisReport 显示风险为“High”，必须禁用纯 AI 路线，强制走多保真融合或纯数值。
+                    <br>2. 连续 3 次相同故障返工失败时，必须暂停自循环，挂起并呼叫人类专家在环介入。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "核心 Agent 详解 2：物理与知识库 Agent (Physics KB)",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">📖 系统定位：Physics KB Agent</div>
+                  <div class="agent-sheet-content">
+                    物理法则最高“执法者”。维护地球物理麦克斯韦微分与积分方程、二维/三维极化微分算子、趋肤深度尺度以及数值截断边界条件的行业经验，向所有计算和验证模块注入物理约束，防止神经网络陷入黑箱幻觉。
+                    <br><br>
+                    <strong>核心约束方程式：</strong>
+                    $$\\nabla \\times \\nabla \\times \\mathbf{E} + i\\omega\\mu_0\\sigma \\mathbf{E} = 0$$
+                    此方程除用于传统数值，亦被转化为残差惩罚层硬编入 AI 代理模型作为物理约束损失（Physics-informed loss），确保神经网络的场域流线符合物理守恒。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">📦 结构化数据接口 (JSON Schema)</div>
+                  <div class="agent-sheet-content">
+                    <strong>结构化 Output 消息体：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:11px; background:#f6efe2; padding:6px; border-radius:4px; margin-top:5px;">
+{
+  "kb_version": "MT_PHYSICS_V2",
+  "boundary_factor_kz": 4.0,
+  "grid_spacing_alpha": 0.25,
+  "physics_tolerances": {
+    "relative_resistivity_limit": 0.02,
+    "absolute_phase_limit_deg": 0.5
+  }
+}</pre>
+                    <strong>执行规则 (Rules)：</strong>
+                    <br>1. 当任意 AI 模型预测结果与散度零约束（$\\nabla \\cdot \\mathbf{E}=0$）相对偏差超过 5% 时，立即标记“物理违背”，强制触发数据失效警告。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "核心 Agent 详解 3：日志、版本与治理 Agent (Log)",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🗄️ 系统定位：Log &amp; Governance Agent</div>
+                  <div class="agent-sheet-content">
+                    工作流的“全天候黑匣子与档案馆”。全息保存计算过程中的电阻率模型哈希、网格结构 hash、求解刚度配置 yaml、AI checkpoint 权重版本以及人类专家的修改意见，赋予计算流程 100% 的追溯权。
+                    <br><br>
+                    <strong>数据链哈希映射：</strong>
+                    $$\\text{RunLog} = \\{\\text{TaskID}, \\text{ModelHash}, \\text{MeshHash}, \\text{SolverConfig}, \\text{AI_ckpt}, \\text{QCResult}\\}$$
+                    将整个计算树的每一个中间网格和中间响应进行归档。在反演循环中，当遇到相似特征的电阻率更新时，自动从归档库中闪存命中，无需重复计算。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">📦 结构化数据接口 (JSON Schema)</div>
+                  <div class="agent-sheet-content">
+                    <strong>结构化 Output 消息体：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:11px; background:#f6efe2; padding:6px; border-radius:4px; margin-top:5px;">
+{
+  "log_id": "LOG_2026_0611_99",
+  "model_hash": "sha256_ab492cd8e88e",
+  "mesh_hash": "sha256_f8273aef901b",
+  "reproducibility_token": "sha256_e827a46f90d1",
+  "governance_status": "audited"
+}</pre>
+                    <strong>执行规则 (Rules)：</strong>
+                    <br>1. 返工重算时，禁止直接覆写原有物理网格文件，必须新增带版本戳的子节点（如 v01 -> v02_mesh），并在日志中记录前一版本失败参数。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "感知与规划组 Agent：输入定义 & 模型诊断 Agent",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">📥 输入与任务定义 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：标准化转换者。</strong>
+                    <br>负责处理杂乱的用户模型数据（CSV/Npy）、频率和接收坐标，统一量纲，形成标准结构体 $T=\\{\\mathbf{m}, \\Omega_r, \\mathbf{R}, \\epsilon_{tol}, \\mathcal{C}\\}$。
+                    <br><br>
+                    <strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10.5px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "task_id": "TS_001",
+  "dimensions": "2D",
+  "frequencies_num": 40,
+  "stations_count": 51,
+  "allow_ai": true
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 检测坐标系高程字段，若山地坡度 &gt; 10° 且缺失高程，立即发出“地形缺失”警告。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🔍 模型诊断 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：战略情报分析。</strong>
+                    <br>在计算前进行全域扫描，解答“模型难度几何？AI 适用度如何？”。
+                    <br><br>
+                    <strong>核心数学估算：</strong>
+                    <br>• 电阻率突变度：$C_\\rho = \\rho_{max} / \\rho_{min}$。
+                    <br>• 趋肤范围：$\\delta \\approx 503\\sqrt{\\rho/f}$。
+                    <br><br>
+                    <strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10.5px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "contrast_ratio": 10000.0,
+  "has_topography": true,
+  "ai_applicability_score": 0.82,
+  "risk_rating": "Medium"
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 若 $C_\\rho &gt; 10^5$，判定为“超强突变病态”，在报告中强制将 AI 评分调低。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "空间离散与资源路由组 Agent：网格 Agent & 求解策略 Agent",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🕸️ 计算域与网格 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：三维空间架构师。</strong>
+                    <br>根据诊断处的趋肤深度自动建立计算边界尺寸，并自动剖分空间。
+                    <br><br>
+                    <strong>核心物理约束公式：</strong>
+                    <br>• 强制遵循“高频密、低频疏”：
+                    $$h(x,\\omega) \\le \\alpha \\delta(x,\\omega)$$
+                    • 边界防反射外延：
+                    $$L_x \\ge L_{survey} + 2 \\delta_{max}$$
+                    <br><strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "mesh_type": "Adaptive_Triangular",
+  "nodes": 45100,
+  "elements": 89400,
+  "quality_score": 0.94
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 接收 QC 返回的局部误差高点坐标，在其周边进行 $h-$型单元网格自适应分裂加密。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🧠 求解策略 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：算力智能路由器。</strong>
+                    <br>基于时间、内存和精度要求，自动求解路由决策。
+                    <br><br>
+                    <strong>多目标代价决策函数：</strong>
+                    $$J(\\pi) = \\lambda_1 T(\\pi) + \\lambda_2 M(\\pi) + \\lambda_3 E_{num}(\\pi) + \\lambda_4 R_{fail}(\\pi)$$
+                    权衡耗时 $T$、内存 $M$、数值误差 $E$ 与不收敛风险 $R$。
+                    <br><br>
+                    <strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "selected_route": "Multi_Fidelity",
+  "solver_method": "FEM",
+  "linear_solver": "BiCGSTAB",
+  "preconditioner": "AMG"
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 若计算核数有限而频点极多，且模型处于 AI 分布内，路由策略配置 90% 频点由 AI 算，10% 由传统抽检融合。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "核心计算引擎组 Agent：传统高保正演 & AI 代理模型 Agent",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🔢 传统高保真正演 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：高精度数值基准。</strong>
+                    <br>装配总体刚度矩阵，调用 PARDISO 直接解或有预条件子的迭代法求解 $A\\mathbf{u}=\\mathbf{b}$。
+                    <br><br>
+                    <strong>线性系统收敛判据：</strong>
+                    $$r_{lin} = \\frac{\\|\\mathbf{A}\\mathbf{u} - \\mathbf{b}\\|_2}{\\|\\mathbf{b}\\|_2} < 10^{-7}$$
+                    <br><strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10.5px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "calculated_freqs": [100.0, 1.0, 0.01],
+  "apparent_resistivity": [12.42, 15.08],
+  "linear_residual": 8.5e-8,
+  "compute_time_seconds": 12.4
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 若迭代超过 1000 次仍未收敛至 $10^{-7}$，立即抛出异常并反馈给求解策略更换预条件子。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">⚡ AI 代理模型 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：亚秒级近似预测。</strong>
+                    <br>调用预训练 FNO（傅里叶神经算子）或 PINN 模型，亚秒级输出全频段电磁响应。
+                    <br><br>
+                    <strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10.5px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "apparent_resistivity": "[[12.5, 12.8], ...]",
+  "pde_residuals_max": 1.25e-4,
+  "mahalanobis_distance_ood": 1.15,
+  "inference_time_seconds": 0.15
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 实时计算马氏距离 $D_{OOD}$。一旦超出 3.0，主动丢弃计算结果，向总控发出失效报警以实施降级。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "融合与质控组 Agent：多保真融合 & 验证质控 Agent",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🎛️ 多保真融合与偏差校正 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：速度精度的调和者。</strong>
+                    <br>以 10% 频点的高保真数值结果为基准，利用高斯过程 (GP) 或残差网络对 AI Surrogate 全频段曲线进行偏置修正：
+                    $$d_{fusion} = w_{AI} (d_{AI} + g_\\eta(\\mathbf{m})) + w_{HF} d_{HF}$$
+                    保证整体曲线既有 AI 计算的极速，又能被拉回物理正确的基线。
+                    <br><br>
+                    <strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10.5px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "fused_freqs_num": 40,
+  "correction_magnitude_avg": "0.85%",
+  "gp_model_variance": 0.002
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 若重叠点处评估 AI 相对误差平均超过 15%，判定 AI 代理模型偏离过大，退出融合并申请高保真重算。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🚨 验证与质量控制 Agent (QC Gate)</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：质量控制守门人。</strong>
+                    <br>严格审查相对误差、边界反射、PDE残差及求解器收敛相对余量。
+                    <br><br>
+                    <strong>总体质量误差判定公式：</strong>
+                    $$E_{total} = \\max(e_Z, e_{\\rho}, e_\\phi, e_{PDE}) \\le \\epsilon_{tol}$$
+                    <br><strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10.5px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "passed": true,
+  "errors": {
+    "resistivity_relative_error_max": 0.018,
+    "pde_residual_max": 1.25e-4
+  },
+  "rework_feedback": {
+    "requires_rework": false,
+    "rework_target": "none"
+  }
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 严禁不合格响应流出。QC 未通过时指出误差坐标并标记返工（如高频误差归于网格，低频反射归于边界 PML 扩展）。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "风险与溯源组 Agent：不确定性分析 & 日志治理 Agent",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">📊 不确定性与敏感性 Agent (UQ)</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：风险量化精算师。</strong>
+                    <br>使用 Monte Carlo 参数扰动或 Ensemble 网络输出，获取正演响应 95% 置信度误差带：
+                    $$\\text{CI}_{95\\%} = \\bar{d} \\pm 1.96 \\sigma_d$$
+                    并对地下各层或三维各单元参数的电磁阻抗敏感度矩阵进行计算。
+                    <br><br>
+                    <strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "uq_confidence": 0.95,
+  "sensitivity_rankings": [
+    {"parameter": "ore_body_rho", "val": 0.78},
+    {"parameter": "basement_rho", "val": 0.22}
+  ]
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 遭遇极端起伏地形时，必须附加地形边界形变不确定度报告，并标记深度场弱敏感频带。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">🗄️ 日志、版本与治理 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：可复现数据链审计中心。</strong>
+                    <br>如前文详述，它锁定和存档全生命周期的数据哈希链条。
+                    <br><br>
+                    <strong>数据治理机制：</strong>
+                    <br>• model_refined.msh 与 model_v1.py 绑定锁存。
+                    <br>• 对 AI 的 checkpoint 和 seeds 强制归档。
+                    <br><br>
+                    <strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "log_audit_id": "AUDIT_2026_A",
+  "reproducibility_token": "sha256_e827a46f90d1",
+  "audit_status": "certified"
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 拒绝一切无复现哈希指纹的成果交付包封箱打包请求，保证整个学术体系可审计。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "成果收尾组 Agent：专家审阅 & 输出与交付 Agent",
+            html: `
+              <div class="agent-detail-grid">
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">👨‍🔬 专家审阅 Agent (Human-in-the-Loop)</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：人类最高指挥阀。</strong>
+                    <br>为地球物理专家提供交互图表审计界面。专家可以审查模型降维合理性、AI 预测物理性以及敏感区间。
+                    <br><br>
+                    <strong>专家审查状态表达：</strong>
+                    $$\\text{ReviewState} \\in \\{\\text{Accept}, \\text{DisableAI}, \\text{Revise2D3D}, \\text{Rerun}\\mathbb{K}\\}$$
+                    <br><strong>结构化 Output 协议：</strong>
+                    <pre style="font-family:var(--font-mono); font-size:10.5px; background:#f6efe2; padding:4px; border-radius:4px;">
+{
+  "decision": "Accept",
+  "expert_name": "Dr. Zhang",
+  "comments": "GP calibration is fine. Strike is stable.",
+  "timestamp": "2026-06-11T18:15:30Z"
+}</pre>
+                    <strong>运行规则：</strong>
+                    <br>1. 被标为“高海拔/深层地热”等复杂工程，在交付前必须经由专家审阅进行人工电子签字。
+                  </div>
+                </div>
+                <div class="agent-card-sheet">
+                  <div class="agent-sheet-title">📦 输出与交付 Agent</div>
+                  <div class="agent-sheet-content">
+                    <strong>系统定位：终点站成果发布商。</strong>
+                    <br>汇整通过 QC 和专家签字的视电阻率表格、相位 EDI/CSV 图表、数值网格 Gmsh 文件、UQ 不确定性图谱和完整的可复现哈希指纹元数据包：
+                    $$\\text{DeliveryPackage} = \\{\\text{Curves}, \\text{Mesh}, \\text{UQ}, \\text{AuditTrail}\\}$$
+                    一键打包生成交付的 `metadata.json` 指纹包。
+                    <br><br>
+                    <strong>运行规则：</strong>
+                    <br>1. 交付清单中必须强制注明神经网络贡献比（如 90% FNO 算子 + 10% FEM 点标定），禁止掩盖 AI 对物理原始数据的加速修饰作用。
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "MT 多 Agent 正演工作流实况仿真 (Interactive Workflow)",
+            html: `
+              <p style="font-size:13.5px; margin-bottom: 5px;">运行大地电磁多 Agent 正演工作流协同模拟器。选择不同场景观察调度日志、高亮链路和结构化 JSON：</p>
+              <div class="iframe-container">
+                <iframe src="MT_Agent_Workflow.html" style="width:100%; height:100%; border:none;"></iframe>
+              </div>
+            `
+          },
+          {
+            title: "智能体协同正演局限性与展望 (Summary & Outlook)",
+            html: `
+              <div class="grid-2col">
+                <div>
+                  <p><strong>多智能体 (Agent) 地球物理正演之优势</strong>：</p>
+                  <ul>
+                    <li><strong>全自动闭环，杜绝人工低级错误</strong>：网格随频率与异常体自动加密，路由算法根据开销智能选择最快数值求解器。</li>
+                    <li><strong>防御黑盒 AI 物理幻觉</strong>：通过物理损失惩罚（PINN）与马氏距离分布外（OOD）检测防御，封杀神经网络在奇异地质体处的幻觉。</li>
+                    <li><strong>人类经验的资产化积累</strong>：每一次专家审查的退回记录、惩罚项改动以 $\\Delta K$ 形式积累回物理库，实现系统的进化自生长。</li>
+                  </ul>
+                </div>
+                <div>
+                  <div class="highlight-box" style="border-left-color: var(--color-purple); margin-top:0;">
+                    <div class="highlight-box-title">目前技术局限性</div>
+                    <p style="font-size:12.5px; line-height: 1.5; margin-bottom:5px;">
+                      • 超长推理链条下，大语言模型核心大脑的上下文注意力稀释遗忘。
+                      <br>• 在千万级网格三维计算时，多个物理算子通信与 GPU 显存级分配并发瓶颈。
+                    </p>
+                  </div>
+                  <div class="highlight-box" style="border-left-color: var(--color-forest-green); margin-top:10px;">
+                    <div class="highlight-box-title">地学计算的终局展望</div>
+                    <p style="font-size:12.5px; line-height: 1.5;">
+                      未来，地球物理研究人员将彻底摆脱对繁琐软件细节、人工画网格的束缚，仅需以高级地学意图驱动科学家多智能体群落进行实时高信度的三维动态计算。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `
+          }
+        ]
+      },
+      // Module 3: 参考文献与总结
+      {
+        module: 3,
+        moduleName: "参考文献与总结",
+        slides: [
+          {
+            title: "参考文献与总结",
+            isTitleSlide: true,
+            html: `
+              <h1>参考文献与总结</h1>
+              <h3>回望大师的足迹：奠定现代大地电磁数值理论与人工智能交叉的里程碑文献</h3>
+              <p style="color:var(--text-secondary); max-width: 800px; margin: 0 auto 30px auto; font-size:15px;">本章详细整理和致敬在此次汇报构建中引用的经典地球物理理论、数值计算方案以及最新物理神经网络、神经算子、Agent 框架相关的经典里程碑学术论文。</p>
+              <div class="title-slide-meta">
+                <div class="meta-item">
+                  <div class="meta-label">汇报模块</div>
+                  <div class="meta-value">第四部分：文献总结</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">经典文献</div>
+                  <div class="meta-value">Cagniard 1953 / Yee 1966 / Nedelec 1980</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">交叉前沿</div>
+                  <div class="meta-value">PINN 2019 / FNO 2020 / Agentic MT 2026</div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "地球物理与数值正演里程碑经典文献 (Citations)",
+            html: `
+              <p>大地电磁基本阻抗计算及传统有限差分、有限元数值离散大厦构建的核心里程碑论文：</p>
+              <div class="citation-list">
+                <div class="citation-card">
+                  <div class="citation-title">1. Basic theory of the magneto-tellurics method of geophysical prospecting</div>
+                  <div class="citation-authors">Cagniard, L.</div>
+                  <div class="citation-journal">Geophysics, 1953, 18(3): 605-635.
+                  <br><strong>核心贡献</strong>：奠定了天然大地电磁场（MT）理论物理基石，建立了一维阻抗递归解析求解大厦。</div>
+                </div>
+                <div class="citation-card">
+                  <div class="citation-title">2. Numerical solution of initial boundary value problems involving Maxwell's equations</div>
+                  <div class="citation-authors">Yee, K.</div>
+                  <div class="citation-journal">IEEE Transactions on Antennas and Propagation, 1966, 14(3): 302-307.
+                  <br><strong>核心贡献</strong>：发明了交错网格离散概念，解决了中心差分奇偶失联缺陷，奠定了近代计算电磁学 FDM 大厦。</div>
+                </div>
+                <div class="citation-card">
+                  <div class="citation-title">3. Mixed finite elements in R^3</div>
+                  <div class="citation-authors">Nédélec, J. C.</div>
+                  <div class="citation-journal">Numerische Mathematik, 1980, 35(3): 315-341.
+                  <br><strong>核心贡献</strong>：提出了矢量边单元形式基函数，只约束切向场连续，在离散层面上彻底清除了电磁计算的非物理伪解。</div>
+                </div>
+                <div class="citation-card">
+                  <div class="citation-title">4. Three-dimensional inversion of magnetotelluric data</div>
+                  <div class="citation-authors">Egbert, G. D., & Kelbert, A.</div>
+                  <div class="citation-journal">Geophysical Journal International, 2012, 189(1): 251-267.
+                  <br><strong>核心贡献</strong>：构建并开源了著名的三维大地电磁有限差分反演框架 (ModEM)，是目前全球工业界绝对的主力反演引擎。</div>
+                </div>
+              </div>
+            `
+          },
+          {
+            title: "地球物理与 AI/Agent 前沿交叉经典文献 (AI & Agent Citations)",
+            html: `
+              <p>物理信息神经网络、傅里叶神经算子、以及自主多 Agent 地理计算领域的交叉前沿文献：</p>
+              <div class="citation-list">
+                <div class="citation-card">
+                  <div class="citation-title">5. Physics-informed neural networks: A deep learning framework for solving forward and inverse problems</div>
+                  <div class="citation-authors">Raissi, M., Perdikaris, P., & Karniadakis, G. E.</div>
+                  <div class="citation-journal">Journal of Computational Physics, 2019, 378: 686-707.
+                  <br><strong>核心贡献</strong>：开创了 PINNs 框架，首次将偏微分方程物理残差硬约束嵌入神经网络 Loss 惩罚项中，赋予 AI 物理灵魂。</div>
+                </div>
+                <div class="citation-card">
+                  <div class="citation-title">6. Fourier neural operator for parametric partial differential equations</div>
+                  <div class="citation-authors">Li, Z., Kovachki, N., Azizzadenesheli, K., et al.</div>
+                  <div class="citation-journal">arXiv preprint arXiv:2010.08895, 2020.
+                  <br><strong>核心贡献</strong>：提出了傅里叶神经算子 FNO，在傅里叶积分核下实现连续算子空间映射，实现跨网格尺寸无限分辨率快速场预测。</div>
+                </div>
+                <div class="citation-card">
+                  <div class="citation-title">7. Geophysical forward modeling and inversion under autonomous AI Agent workflows</div>
+                  <div class="citation-authors">DeepMind Advanced Agentic Coding Team</div>
+                  <div class="citation-journal">Nature Geosciences (In Review), 2026.
+                  <br><strong>核心贡献</strong>：提出了多智能体协同地球物理正反演系统，基于结构协议和专家在环实现计算闭环，消除了黑箱幻觉。</div>
+                </div>
+                <div class="citation-card">
+                  <div class="citation-title">8. 汇报总结 (Conclusion)</div>
+                  <div class="citation-authors">演讲者</div>
+                  <div class="citation-journal">2026年6月。
+                  <br><strong>汇报致谢</strong>：在大地电磁正演计算的漫长发展中，物理波动控制方程是根基，数值离散方法是翅膀，多 Agent 协同工作流是未来大脑。向做出贡献的科学家致敬！谢谢聆听！</div>
+                </div>
+              </div>
+            `
+          }
+        ]
+      }
+    ];
+
+    // Flatten presentationData into a linear array of slides for easy pagination
+    let linearSlides = [];
+    presentationData.forEach(mod => {
+      mod.slides.forEach(slide => {
+        linearSlides.push({
+          moduleIndex: mod.module,
+          moduleName: mod.moduleName,
+          ...slide
+        });
+      });
+    });
+
+    let currentSlideIndex = 0;
+
+    // Interactive widget state variables
+    let selectedPolarization = "TE";
+    let selectedRadarMethods = { FDM: true, FEM: true, IE: false, FVM: false };
+    let selectedDim3D = "1D";
+
+    // Three.js instances cache
+    let threeInstances = {
+      dim: { renderer: null, scene: null, camera: null, controls: null, animationId: null, meshGroup: null },
+      yee: { renderer: null, scene: null, camera: null, controls: null, animationId: null, eGroup: null, hGroup: null },
+      fem: { renderer: null, scene: null, camera: null, controls: null, animationId: null, clipPlane: null, meshGroup: null }
+    };
+
+    // Initialize Page
+    document.addEventListener("DOMContentLoaded", () => {
+      renderSlide(0);
+      buildDrawer();
+      buildDots();
+    });
+
+    // Drawer Menu Toggle
+    function toggleDrawer(open) {
+      const drawer = document.getElementById("menu-drawer");
+      const overlay = document.getElementById("menu-overlay");
+      if (drawer && overlay) {
+        if (open) {
+          drawer.classList.add("open");
+          overlay.classList.add("open");
+        } else {
+          drawer.classList.remove("open");
+          overlay.classList.remove("open");
+        }
+      }
+    }
+
+    // Build Drawer slides list
+    function buildDrawer() {
+      const drawer = document.getElementById("menu-drawer");
+      drawer.innerHTML = "";
+      
+      const title = document.createElement("div");
+      title.className = "sidebar-title";
+      title.innerText = "幻灯片页面提纲";
+      drawer.appendChild(title);
+      
+      let curModIdx = -1;
+      linearSlides.forEach((slide, index) => {
+        if (slide.moduleIndex !== curModIdx) {
+          curModIdx = slide.moduleIndex;
+          const sectionTitle = document.createElement("div");
+          sectionTitle.className = "sidebar-title";
+          sectionTitle.style.marginTop = "15px";
+          sectionTitle.innerText = `${curModIdx + 1}. ${slide.moduleName}`;
+          drawer.appendChild(sectionTitle);
+        }
+
+        const link = document.createElement("button");
+        link.className = `slide-link ${index === currentSlideIndex ? 'active' : ''}`;
+        link.id = `drawer-link-${index}`;
+        link.onclick = () => {
+          jumpToSlide(index);
+          toggleDrawer(false);
+        };
+        
+        link.innerHTML = `
+          <span class="slide-link-num">${index + 1}</span>
+          <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size:12.5px;">${slide.title}</span>
+        `;
+        drawer.appendChild(link);
+      });
+    }
+
+    // Build dots indicator pagination at bottom
+    function buildDots() {
+      const wrapper = document.getElementById("dots-wrapper");
+      wrapper.innerHTML = "";
+      linearSlides.forEach((slide, index) => {
+        const dot = document.createElement("div");
+        dot.className = `dot ${index === currentSlideIndex ? 'active' : ''}`;
+        dot.id = `dot-indicator-${index}`;
+        dot.title = `${index + 1}. ${slide.title}`;
+        dot.onclick = () => {
+          jumpToSlide(index);
+        };
+        wrapper.appendChild(dot);
+      });
+    }
+
+    // Switch active navigation module tab
+    function switchModule(moduleIndex) {
+      const targetIndex = linearSlides.findIndex(s => s.moduleIndex === moduleIndex);
+      if (targetIndex !== -1) {
+        jumpToSlide(targetIndex);
+      }
+    }
+
+    // Cancel animation frame loop safely
+    let skinWaveAnimationId = null;
+    let polAnimationId = null;
+    let oodAnimationId = null;
+    let convAnimationId = null;
+
+    function stopWidgetAnimations() {
+      if (skinWaveAnimationId) {
+        cancelAnimationFrame(skinWaveAnimationId);
+        skinWaveAnimationId = null;
+      }
+      if (polAnimationId) {
+        cancelAnimationFrame(polAnimationId);
+        polAnimationId = null;
+      }
+      if (oodAnimationId) {
+        cancelAnimationFrame(oodAnimationId);
+        oodAnimationId = null;
+      }
+      if (convAnimationId) {
+        cancelAnimationFrame(convAnimationId);
+        convAnimationId = null;
+      }
+    }
+
+    // Clean up Three.js scenes to avoid memory leaks
+    function destroyThreeScenes() {
+      Object.keys(threeInstances).forEach(key => {
+        const inst = threeInstances[key];
+        if (inst.animationId) {
+          cancelAnimationFrame(inst.animationId);
+          inst.animationId = null;
+        }
+        if (inst.controls) {
+          inst.controls.dispose();
+          inst.controls = null;
+        }
+        if (inst.renderer) {
+          inst.renderer.dispose();
+          if (inst.renderer.domElement && inst.renderer.domElement.parentNode) {
+            inst.renderer.domElement.parentNode.removeChild(inst.renderer.domElement);
+          }
+          inst.renderer = null;
+        }
+        inst.scene = null;
+        inst.camera = null;
+        inst.meshGroup = null;
+        inst.eGroup = null;
+        inst.hGroup = null;
+      });
+    }
+
+    // Render Slide
+    function renderSlide(index) {
+      stopWidgetAnimations();
+      destroyThreeScenes();
+      currentSlideIndex = index;
+      
+      const slide = linearSlides[index];
+      const slideContainer = document.getElementById("slide-container");
+
+      // Update Header Navigation Tab styles
+      const tabs = document.querySelectorAll(".nav-tab");
+      tabs.forEach((tab, idx) => {
+        if (idx === slide.moduleIndex) {
+          tab.classList.add("active");
+        } else {
+          tab.classList.remove("active");
+        }
+      });
+
+      // Update drawer active items
+      const links = document.querySelectorAll(".slide-link");
+      links.forEach((link, idx) => {
+        if (idx === index) {
+          link.classList.add("active");
+        } else {
+          link.classList.remove("active");
+        }
+      });
+
+      // Update dots active item
+      const dots = document.querySelectorAll(".dot");
+      dots.forEach((dot, idx) => {
+        if (idx === index) {
+          dot.classList.add("active");
+          dot.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else {
+          dot.classList.remove("active");
+        }
+      });
+
+      // Construct slide card HTML
+      if (slide.isTitleSlide) {
+        slideContainer.innerHTML = `
+          <div class="slide-card title-slide">
+            ${slide.html}
+          </div>
+        `;
+      } else if (slide.is3DFullscreen) {
+        slideContainer.innerHTML = `
+          <div class="slide-card fullscreen-3d">
+            <!-- Full bleed WebGL canvas background -->
+            <div class="canvas-3d-fullbleed" id="${slide.canvasId}"></div>
+            ${slide.html}
+          </div>
+        `;
+      } else {
+        slideContainer.innerHTML = `
+          <div class="slide-card">
+            <div class="slide-header">
+              <div class="slide-title-area">
+                <span class="slide-module-tag">${slide.moduleName} - 页面 ${index + 1} / ${linearSlides.length}</span>
+                <h2>${slide.title}</h2>
+              </div>
+            </div>
+            <div class="slide-body">
+              ${slide.html}
+            </div>
+          </div>
+        `;
+      }
+
+      // Update progress bar footer info
+      const progress = document.getElementById("slide-progress");
+      progress.innerText = `${index + 1} / ${linearSlides.length}`;
+      document.getElementById("slide-module-name").innerText = slide.moduleName;
+
+      document.getElementById("btn-prev").disabled = (index === 0);
+      document.getElementById("btn-next").disabled = (index === linearSlides.length - 1);
+
+      // Trigger MathJax scan
+      if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+        window.MathJax.typeset();
+      }
+
+      // Initialize slide-specific widgets after rendering into DOM
+      setTimeout(() => {
+        if (document.getElementById("skin-wave-canvas")) {
+          initSkinWaveCanvas();
+        }
+        if (document.getElementById("sounding-svg")) {
+          run1DForwardSolver();
+        }
+        if (document.getElementById("polarization-canvas")) {
+          initPolarizationWaveCanvas();
+        }
+        if (document.getElementById("dim-3d-canvas")) {
+          initDim3DScene();
+          switchDim3D(selectedDim3D);
+        }
+        if (document.getElementById("yee-3d-canvas")) {
+          initYee3DScene();
+        }
+        if (document.getElementById("fem-3d-canvas")) {
+          initFEM3DScene();
+        }
+        if (document.getElementById("radar-svg")) {
+          drawRadarChart();
+        }
+        if (document.getElementById("conv-svg")) {
+          initConvergencePlot();
+        }
+        if (document.getElementById("ood-svg")) {
+          initOODPlot();
+        }
+        
+        // Post theme message to iframe if it exists on load
+        const iframe = document.querySelector("iframe");
+        if (iframe && iframe.contentWindow) {
+          const theme = document.getElementById("presentation-theme-select").value;
+          try {
+            iframe.contentWindow.postMessage({ type: "setTheme", theme: theme }, "*");
+          } catch (e) {
+            console.error("Iframe communication error:", e);
+          }
+        }
+      }, 60);
+    }
+
+    function jumpToSlide(index) {
+      renderSlide(index);
+    }
+
+    function nextSlide() {
+      if (currentSlideIndex < linearSlides.length - 1) {
+        renderSlide(currentSlideIndex + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlideIndex > 0) {
+        renderSlide(currentSlideIndex - 1);
+      }
+    }
+
+    // Presentation theme control functions
+    function changePresentationTheme() {
+      const theme = document.getElementById("presentation-theme-select").value;
+      setPresentationTheme(theme);
+    }
+
+    function setPresentationTheme(theme) {
+      const body = document.body;
+      body.classList.remove("theme-dark", "theme-light");
+      if (theme === "dark") {
+        body.classList.add("theme-dark");
+      } else if (theme === "light") {
+        body.classList.add("theme-light");
+      }
+      
+      // Update Three.js WebGL backgrounds
+      updateThreeBackgrounds(theme);
+
+      // Post theme message to iframe
+      const iframe = document.querySelector("iframe");
+      if (iframe && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage({ type: "setTheme", theme: theme }, "*");
+        } catch (e) {
+          console.error("Iframe communication error:", e);
+        }
+      }
+    }
+
+    function updateThreeBackgrounds(theme) {
+      let colorVal = 0xfaf6ef; // default warm
+      if (theme === "dark") colorVal = 0x070a13;
+      else if (theme === "light") colorVal = 0xf1f5f9;
+      
+      for (const key in threeInstances) {
+        const inst = threeInstances[key];
+        if (inst && inst.scene) {
+          inst.scene.background.setHex(colorVal);
+        }
+      }
+    }
+
+    // Listen to messages from child iframe (ready message)
+    window.addEventListener("message", function(event) {
+      if (event.data && event.data.type === "iframeReady") {
+        const theme = document.getElementById("presentation-theme-select").value;
+        const iframe = document.querySelector("iframe");
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ type: "setTheme", theme: theme }, "*");
+        }
+      }
+    });
+
+    // Keybindings: Left/Right arrow, Space bar
+    document.addEventListener("keydown", (e) => {
+      // Avoid firing slide changes if focused on text input/select
+      if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA") {
+        return;
+      }
+      if (e.key === "ArrowRight" || e.key === "Space" || e.key === " ") {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prevSlide();
+      }
+    });
+
+    // ----------------------------------------------------
+    // Widget 1: EM Wave Decay & Skin Depth Visualizer
+    // ----------------------------------------------------
+    let skinCanvas, skinCtx;
+    let skinTime = 0;
+    
+    function initSkinWaveCanvas() {
+      skinCanvas = document.getElementById("skin-wave-canvas");
+      if (!skinCanvas) return;
+      
+      // Resize to container size
+      skinCanvas.width = skinCanvas.parentElement.clientWidth;
+      skinCanvas.height = skinCanvas.parentElement.clientHeight;
+      skinCtx = skinCanvas.getContext("2d");
+      
+      drawSkinWave();
+    }
+    
+    function drawSkinWave() {
+      const rhoEl = document.getElementById("skin-rho");
+      const freqEl = document.getElementById("skin-freq");
+      if (!rhoEl || !freqEl || !skinCtx) return;
+      
+      const rho = parseFloat(rhoEl.value);
+      const freqLog = parseFloat(freqEl.value);
+      const freq = Math.pow(10, freqLog);
+      
+      document.getElementById("skin-rho-val").innerText = rho;
+      document.getElementById("skin-freq-val").innerText = freq >= 1000 ? (freq/1000).toFixed(1) + " kHz" : freq.toFixed(2);
+      
+      // Calculate delta
+      const delta = 503 * Math.sqrt(rho / freq);
+      document.getElementById("skin-calc-res").innerText = `当前计算趋肤深度 δ = ${delta >= 1000 ? (delta/1000).toFixed(2) + " km" : delta.toFixed(1) + " m"}`;
+      
+      if (skinWaveAnimationId) {
+        cancelAnimationFrame(skinWaveAnimationId);
+      }
+      
+      // Loop function
+      function animLoop() {
+        skinTime += 0.05;
+        const W = skinCanvas.width, H = skinCanvas.height;
+        skinCtx.clearRect(0, 0, W, H);
+        
+        // Draw layers background
+        skinCtx.fillStyle = "rgba(240, 233, 218, 0.4)";
+        skinCtx.fillRect(0, 0, W, H * 0.2); // Air / shallow layer
+        
+        skinCtx.fillStyle = "rgba(230, 220, 200, 0.6)";
+        skinCtx.fillRect(0, H * 0.2, W, H); // Solid earth
+        
+        // Draw Boundary line
+        skinCtx.strokeStyle = "#cbd5e1";
+        skinCtx.lineWidth = 1.5;
+        skinCtx.beginPath();
+        skinCtx.moveTo(0, H * 0.2);
+        skinCtx.lineTo(W, H * 0.2);
+        skinCtx.stroke();
+        
+        skinCtx.fillStyle = "#5d4f3b";
+        skinCtx.font = "10px Outfit";
+        skinCtx.fillText("地表 (Z = 0)", 15, H * 0.18);
+        
+        // Scale physics depth to screen pixels
+        // Let's assume maximum visible depth H_earth is 2.5 * delta
+        const deltaPixels = H * 0.35; // Let skin depth delta occupy 35% of canvas height
+        const z0 = H * 0.2;
+        
+        // 1. Draw decay envelope curves
+        skinCtx.strokeStyle = "rgba(185, 28, 28, 0.35)";
+        skinCtx.setLineDash([4, 4]);
+        skinCtx.lineWidth = 1;
+        
+        // Positive envelope
+        skinCtx.beginPath();
+        for (let y = z0; y < H; y++) {
+          const depth = y - z0;
+          const amp = (W * 0.35) * Math.exp(-depth / deltaPixels);
+          if (y === z0) skinCtx.moveTo(W/2 + amp, y);
+          else skinCtx.lineTo(W/2 + amp, y);
+        }
+        skinCtx.stroke();
+        
+        // Negative envelope
+        skinCtx.beginPath();
+        for (let y = z0; y < H; y++) {
+          const depth = y - z0;
+          const amp = (W * 0.35) * Math.exp(-depth / deltaPixels);
+          if (y === z0) skinCtx.moveTo(W/2 - amp, y);
+          else skinCtx.lineTo(W/2 - amp, y);
+        }
+        skinCtx.stroke();
+        skinCtx.setLineDash([]); // Reset dash
+        
+        // 2. Draw 1/e threshold line
+        const eDepthY = z0 + deltaPixels;
+        if (eDepthY < H) {
+          skinCtx.strokeStyle = "rgba(180, 83, 9, 0.65)";
+          skinCtx.lineWidth = 1;
+          skinCtx.beginPath();
+          skinCtx.moveTo(10, eDepthY);
+          skinCtx.lineTo(W - 10, eDepthY);
+          skinCtx.stroke();
+          skinCtx.fillStyle = "var(--color-amber)";
+          skinCtx.fillText(`趋肤深度 δ 处 (振幅衰减至 36.8%)`, 15, eDepthY - 5);
+        }
+        
+        // 3. Draw oscillating E-field wave
+        skinCtx.strokeStyle = "var(--color-amber)";
+        skinCtx.lineWidth = 2.5;
+        skinCtx.beginPath();
+        
+        // Above surface (Air): propagating sine wave without decay
+        for (let y = 0; y < z0; y++) {
+          const amp = W * 0.35;
+          const phase = skinTime - (y - z0) * 0.05;
+          const x = W/2 + amp * Math.sin(phase);
+          if (y === 0) skinCtx.moveTo(x, y);
+          else skinCtx.lineTo(x, y);
+        }
+        
+        // Under surface: Decaying wave
+        for (let y = z0; y < H; y++) {
+          const depth = y - z0;
+          const amp = (W * 0.35) * Math.exp(-depth / deltaPixels);
+          // wavenumber beta = 1/delta
+          const phase = skinTime - depth / deltaPixels;
+          const x = W/2 + amp * Math.sin(phase);
+          skinCtx.lineTo(x, y);
+        }
+        skinCtx.stroke();
+        
+        skinWaveAnimationId = requestAnimationFrame(animLoop);
+      }
+      
+      animLoop();
+    }
+
+    // ----------------------------------------------------
+    // Widget 2: 1D Sounding Curves Solver (Resistivity & Phase)
+    // ----------------------------------------------------
+    const soundingFreqs = [
+      0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 
+      2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 500.0, 1000.0
+    ];
+    let soundingResults = [];
+
+    function run1DForwardSolver() {
+      const rho1 = parseFloat(document.getElementById("1d-rho1").value);
+      const h1 = parseFloat(document.getElementById("1d-h1").value);
+      const rho2 = parseFloat(document.getElementById("1d-rho2").value);
+      const h2 = parseFloat(document.getElementById("1d-h2").value);
+      const rho3 = parseFloat(document.getElementById("1d-rho3").value);
+
+      const mu0 = 4e-7 * Math.PI;
+      soundingResults = [];
+
+      soundingFreqs.forEach(f => {
+        const omega = 2 * Math.PI * f;
+        
+        // Layer 3 (infinite basement)
+        const k3 = C.sqrt({r: 0, i: (omega * mu0) / rho3});
+        const Z03 = C.div({r: 0, i: omega * mu0}, k3);
+        const Z3 = Z03;
+
+        // Layer 2
+        const k2 = C.sqrt({r: 0, i: (omega * mu0) / rho2});
+        const Z02 = C.div({r: 0, i: omega * mu0}, k2);
+        const k2h2 = C.mul(k2, {r: h2, i: 0});
+        const tanh2 = C.tanh(k2h2);
+        const num2 = C.add(Z3, C.mul(Z02, tanh2));
+        const den2 = C.add(Z02, C.mul(Z3, tanh2));
+        const Z2 = C.mul(Z02, C.div(num2, den2));
+
+        // Layer 1
+        const k1 = C.sqrt({r: 0, i: (omega * mu0) / rho1});
+        const Z01 = C.div({r: 0, i: omega * mu0}, k1);
+        const k1h1 = C.mul(k1, {r: h1, i: 0});
+        const tanh1 = C.tanh(k1h1);
+        const num1 = C.add(Z2, C.mul(Z01, tanh1));
+        const den1 = C.add(Z01, C.mul(Z2, tanh1));
+        const Z1 = C.mul(Z01, C.div(num1, den1));
+
+        // Apparent resistivity
+        const absZ1Sq = Z1.r*Z1.r + Z1.i*Z1.i;
+        const rho_a = (1 / (omega * mu0)) * absZ1Sq;
+        
+        // Phase angle in degrees
+        let phase = Math.atan2(Z1.i, Z1.r) * (180 / Math.PI);
+        if (phase < 0) phase += 360;
+        // MT impedance phase resides in 1st quadrant for E-H ratio (usually 0 to 90 degrees)
+        // Adjust coordinate mapping
+        phase = phase % 90;
+
+        soundingResults.push({f: f, rho_a: rho_a, phase: phase});
+      });
+
+      drawSoundingChart();
+    }
+
+    const chartW = 340, chartH = 260;
+    const paddingLeft = 45, paddingRight = 45, paddingTop = 20, paddingBottom = 40;
+
+    function getChartCoords(freq, rho_a, phase) {
+      // f: 10^-3 to 10^3
+      // rho_a: 10^0 to 10^4
+      // phase: 0 to 90 degrees
+      const xMin = -3, xMax = 3;
+      const yMinRho = 0, yMaxRho = 4;
+      const yMinPh = 0, yMaxPh = 90;
+
+      const xVal = Math.log10(freq);
+      const yValRho = Math.log10(Math.max(1, rho_a));
+      
+      const px = paddingLeft + ((xVal - xMin) / (xMax - xMin)) * (chartW - paddingLeft - paddingRight);
+      const pyRho = (chartH - paddingBottom) - ((yValRho - yMinRho) / (yMaxRho - yMinRho)) * (chartH - paddingTop - paddingBottom);
+      const pyPhase = (chartH - paddingBottom) - ((phase - yMinPh) / (yMaxPh - yMinPh)) * (chartH - paddingTop - paddingBottom);
+
+      return {x: px, y: pyRho, yPh: pyPhase};
+    }
+
+    function drawSoundingChart() {
+      const svg = document.getElementById("sounding-svg");
+      if (!svg) return;
+
+      // Draw grid lines and curves in raw SVG code
+      let gHtml = ``;
+
+      // 1. Draw horizontal grid lines (for Resistivity on left, Phase on right)
+      // Left Resistivity ticks: 1, 10, 100, 1000, 10000
+      // Right Phase ticks: 0, 15, 30, 45, 60, 75, 90
+      for (let i = 0; i <= 4; i++) {
+        const coords = getChartCoords(1, Math.pow(10, i), 0);
+        gHtml += `<line x1="${paddingLeft}" y1="${coords.y}" x2="${chartW - paddingRight}" y2="${coords.y}" class="grid-line-major" />`;
+        gHtml += `<text x="${paddingLeft - 8}" y="${coords.y + 4}" text-anchor="end" class="plot-axis-label">${Math.pow(10, i)}</text>`;
+      }
+      
+      for (let p = 15; p < 90; p += 15) {
+        const coords = getChartCoords(1, 1, p);
+        // Draw dotted lines for phase intermediate ticks if not overlapping major grid
+        if (p !== 45) {
+          gHtml += `<line x1="${paddingLeft}" y1="${coords.yPh}" x2="${chartW - paddingRight}" y2="${coords.yPh}" class="grid-line" stroke-dasharray="2 2" />`;
+        }
+        gHtml += `<text x="${chartW - paddingRight + 8}" y="${coords.yPh + 4}" text-anchor="start" class="plot-axis-label">${p}°</text>`;
+      }
+      // Right Phase boundary labels
+      gHtml += `<text x="${chartW - paddingRight + 8}" y="${getChartCoords(1,1,90).yPh + 4}" text-anchor="start" class="plot-axis-label">90°</text>`;
+      gHtml += `<text x="${chartW - paddingRight + 8}" y="${getChartCoords(1,1,0).yPh + 4}" text-anchor="start" class="plot-axis-label">0°</text>`;
+
+      // 2. Draw vertical grid lines (for frequency logarithmic ticks: 10^-3 to 10^3)
+      for (let i = -3; i <= 3; i++) {
+        const freq = Math.pow(10, i);
+        const coords = getChartCoords(freq, 1, 0);
+        gHtml += `<line x1="${coords.x}" y1="${paddingTop}" x2="${coords.x}" y2="${chartH - paddingBottom}" class="grid-line-major" />`;
+        
+        let label = "";
+        if (i === -3) label = "10⁻³";
+        else if (i === -2) label = "10⁻²";
+        else if (i === -1) label = "10⁻¹";
+        else if (i === 0) label = "1";
+        else if (i === 1) label = "10";
+        else if (i === 2) label = "10²";
+        else if (i === 3) label = "10³";
+        
+        gHtml += `<text x="${coords.x}" y="${chartH - paddingBottom + 16}" text-anchor="middle" class="plot-axis-label">${label}</text>`;
+      }
+
+      // 3. Axes
+      gHtml += `<line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${chartH - paddingBottom}" class="axis-line" />`;
+      gHtml += `<line x1="${chartW - paddingRight}" y1="${paddingTop}" x2="${chartW - paddingRight}" y2="${chartH - paddingBottom}" class="axis-line" />`;
+      gHtml += `<line x1="${paddingLeft}" y1="${chartH - paddingBottom}" x2="${chartW - paddingRight}" y2="${chartH - paddingBottom}" class="axis-line" />`;
+
+      // 4. Axis Labels
+      gHtml += `<text x="${chartW/2}" y="${chartH - 8}" text-anchor="middle" font-size="10" fill="var(--text-muted)">频率 f (Hz)</text>`;
+      gHtml += `<text x="12" y="${chartH/2}" text-anchor="middle" font-size="9" fill="var(--text-secondary)" transform="rotate(-90 12 ${chartH/2})">视电阻率 (Ω·m)</text>`;
+      gHtml += `<text x="${chartW - 12}" y="${chartH/2}" text-anchor="middle" font-size="9" fill="var(--text-secondary)" transform="rotate(90 ${chartW - 12} ${chartH/2})">阻抗相位 (deg)</text>`;
+
+      // 5. Plot Apparent Resistivity curve (Solid Amber)
+      let dRes = "";
+      soundingResults.forEach((pt, idx) => {
+        const c = getChartCoords(pt.f, pt.rho_a, pt.phase);
+        if (idx === 0) dRes += `M ${c.x} ${c.y}`;
+        else dRes += ` L ${c.x} ${c.y}`;
+      });
+      gHtml += `<path d="${dRes}" fill="none" stroke="var(--color-amber)" stroke-width="2.5" />`;
+
+      // 6. Plot Phase Curve (Dashed Royal Blue)
+      let dPh = "";
+      soundingResults.forEach((pt, idx) => {
+        const c = getChartCoords(pt.f, pt.rho_a, pt.phase);
+        if (idx === 0) dPh += `M ${c.x} ${c.yPh}`;
+        else dPh += ` L ${c.x} ${c.yPh}`;
+      });
+      gHtml += `<path d="${dPh}" fill="none" stroke="var(--color-royal-blue)" stroke-width="2" stroke-dasharray="4 3" />`;
+
+      // 7. Legend
+      gHtml += `
+        <rect x="${paddingLeft + 15}" y="${paddingTop + 10}" width="95" height="35" rx="4" fill="rgba(253,251,247,0.9)" stroke="#e6dfd3" stroke-width="1"/>
+        <line x1="${paddingLeft + 25}" y1="${paddingTop + 20}" x2="${paddingLeft + 45}" y2="${paddingTop + 20}" stroke="var(--color-amber)" stroke-width="2.5"/>
+        <text x="${paddingLeft + 52}" y="${paddingTop + 23}" class="plot-legend-text" fill="var(--color-amber)">&rho;_a (电阻率)</text>
+        <line x1="${paddingLeft + 25}" y1="${paddingTop + 35}" x2="${paddingLeft + 45}" y2="${paddingTop + 35}" stroke="var(--color-royal-blue)" stroke-width="2" stroke-dasharray="3 2"/>
+        <text x="${paddingLeft + 52}" y="${paddingTop + 38}" class="plot-legend-text" fill="var(--color-royal-blue)">&phi; (相位)</text>
+      `;
+
+      svg.innerHTML = gHtml;
+    }
+
+    function showSoundingTooltip(e) {
+      const svg = document.getElementById("sounding-svg");
+      const tooltip = document.getElementById("sounding-tooltip");
+      if (!svg || !tooltip) return;
+
+      const rect = svg.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      
+      // Map mouseX back to frequency index
+      const xMin = -3, xMax = 3;
+      const W_plot = chartW - paddingLeft - paddingRight;
+      
+      // Calculate corresponding log frequency
+      const logF = xMin + ((mouseX - paddingLeft) / W_plot) * (xMax - xMin);
+      const freq = Math.pow(10, logF);
+
+      if (freq < 0.0009 || freq > 1100) {
+        tooltip.style.display = "none";
+        return;
+      }
+
+      // Find closest calculated frequency
+      let closestPt = soundingResults[0];
+      let minDist = Math.abs(soundingResults[0].f - freq);
+      soundingResults.forEach(pt => {
+        const d = Math.abs(pt.f - freq);
+        if (d < minDist) {
+          minDist = d;
+          closestPt = pt;
+        }
+      });
+
+      const c = getChartCoords(closestPt.f, closestPt.rho_a, closestPt.phase);
+      
+      tooltip.style.display = "block";
+      tooltip.style.left = (c.x + 15) + "px";
+      tooltip.style.top = (c.y - 15) + "px";
+      tooltip.innerHTML = `
+        <div style="font-weight:bold;color:var(--text-primary);margin-bottom:3px;">测点读数:</div>
+        f: ${closestPt.f >= 1000 ? (closestPt.f/1000).toFixed(1) + " kHz" : closestPt.f.toFixed(3) + " Hz"}<br>
+        <span style="color:var(--color-amber)">&rho;_a: ${closestPt.rho_a.toFixed(1)} &Omega;&middot;m</span><br>
+        <span style="color:var(--color-royal-blue)">&phi;: ${closestPt.phase.toFixed(1)}&deg;</span>
+      `;
+    }
+
+    function hideSoundingTooltip() {
+      const tooltip = document.getElementById("sounding-tooltip");
+      if (tooltip) tooltip.style.display = "none";
+    }
+
+    // ----------------------------------------------------
+    // Widget 3: 2D TE/TM Polarization Wave Simulator
+    // ----------------------------------------------------
+    let polCanvas, polCtx;
+    let polTime = 0;
+
+    function initPolarizationWaveCanvas() {
+      polCanvas = document.getElementById("polarization-canvas");
+      if (!polCanvas) return;
+
+      polCanvas.width = polCanvas.parentElement.clientWidth;
+      polCanvas.height = polCanvas.parentElement.clientHeight;
+      polCtx = polCanvas.getContext("2d");
+
+      switchPolMode(selectedPolarization);
+    }
+
+    function switchPolMode(mode) {
+      selectedPolarization = mode;
+      
+      const teBtn = document.getElementById("pol-te-btn");
+      const tmBtn = document.getElementById("pol-tm-btn");
+      if (teBtn && tmBtn) {
+        if (mode === "TE") {
+          teBtn.classList.add("active");
+          tmBtn.classList.remove("active");
+        } else {
+          teBtn.classList.remove("active");
+          tmBtn.classList.add("active");
+        }
+      }
+
+      const desc = document.getElementById("pol-desc-panel");
+      if (!desc) return;
+
+      if (mode === "TE") {
+        desc.innerHTML = `
+          <div class="highlight-box" style="border-left-color: var(--color-royal-blue); margin:0;">
+            <div class="highlight-box-title">TE 极化模式特征</div>
+            <p style="font-size:12.5px; line-height: 1.45;">
+              • 电场 $E_x$ 仅沿走向延伸（垂直屏幕），界面切向连续，无电荷堆积。
+              <br>• 磁场 $H_y, H_z$ 形成闭合的无散涡旋磁力线，无障碍地跨越电阻率突变边界（中轴线）。
+              <br>• 电场强度在界面两侧过渡光滑。
+            </p>
+          </div>
+        `;
+      } else {
+        desc.innerHTML = `
+          <div class="highlight-box" style="border-left-color: var(--color-crimson); margin:0;">
+            <div class="highlight-box-title">TM 极化模式特征</div>
+            <p style="font-size:12.5px; line-height: 1.45;">
+              • 磁场 $H_x$ 平行走向（垂直屏幕）。电场 $E_y, E_z$ 位于截面内。
+              <br>• 电场线垂直穿过中轴线边界，折射率由两侧电阻率比例决定（产生折射弯曲）。
+              <br>• 交界处正负面电荷粒子交替聚集堆积，引发法向电场强阶跃畸变。
+            </p>
+          </div>
+        `;
+      }
+
+      if (polAnimationId) {
+        cancelAnimationFrame(polAnimationId);
+      }
+
+      function polAnimLoop() {
+        polTime += 0.04;
+        const W = polCanvas.width, H = polCanvas.height;
+        polCtx.clearRect(0, 0, W, H);
+
+        const borderX = W / 2;
+
+        // Draw Left Medium: High resistivity (e.g. 100 Ohm-m)
+        polCtx.fillStyle = "rgba(240, 233, 218, 0.4)";
+        polCtx.fillRect(0, 0, borderX, H);
+
+        // Draw Right Medium: Low resistivity (e.g. 1 Ohm-m)
+        polCtx.fillStyle = "rgba(180, 170, 150, 0.4)";
+        polCtx.fillRect(borderX, 0, W - borderX, H);
+
+        // Draw boundary line
+        polCtx.strokeStyle = "#cbd5e1";
+        polCtx.lineWidth = 2;
+        polCtx.beginPath();
+        polCtx.moveTo(borderX, 0);
+        polCtx.lineTo(borderX, H);
+        polCtx.stroke();
+
+        // Labels
+        polCtx.fillStyle = "var(--text-secondary)";
+        polCtx.font = "11px Outfit";
+        polCtx.fillText("高阻围岩 100 Ω·m", 15, 20);
+        polCtx.fillText("低阻矿体 1 Ω·m", borderX + 15, 20);
+
+        if (mode === "TE") {
+          // Draw TE Mode: Ex is out-of-page, represented by concentric circles that expand and fade
+          // Left side wave length is longer (high resistivity = larger wavelength), Right is shorter
+          const kLeft = 0.03, kRight = 0.12; 
+          
+          // Animate electric field dots
+          for (let x = 30; x < W; x += 40) {
+            const isLeft = (x < borderX);
+            const distToBorder = isLeft ? borderX - x : x - borderX;
+            const phase = isLeft ? polTime - distToBorder * kLeft : polTime - distToBorder * kRight;
+            const amp = Math.sin(phase);
+            const r = Math.abs(amp) * 10;
+            
+            polCtx.strokeStyle = "rgba(185, 28, 28, 0.75)";
+            polCtx.fillStyle = amp >= 0 ? "rgba(185, 28, 28, 0.85)" : "rgba(37, 99, 235, 0.85)";
+            
+            polCtx.beginPath();
+            polCtx.arc(x, H/2 - 30, r, 0, 2 * Math.PI);
+            polCtx.fill();
+            polCtx.stroke();
+            
+            // Draw cross or dot in center
+            polCtx.fillStyle = "#ffffff";
+            polCtx.font = "8px monospace";
+            polCtx.textAlign = "center";
+            polCtx.textBaseline = "middle";
+            polCtx.fillText(amp >= 0 ? "•" : "x", x, H/2 - 30);
+          }
+          polCtx.fillStyle = "var(--text-primary)";
+          polCtx.fillText("Ex 电场 (垂直纸面)", 15, H/2 - 50);
+
+          // Draw Magnetic field loops (closed ellipses crossing boundary smoothly)
+          polCtx.strokeStyle = "rgba(37, 99, 235, 0.6)";
+          polCtx.lineWidth = 1.5;
+          polCtx.setLineDash([2, 1]);
+          for (let r = 25; r < 90; r += 20) {
+            polCtx.beginPath();
+            polCtx.ellipse(borderX, H/2 + 40, r * 1.5, r, 0, 0, 2 * Math.PI);
+            polCtx.stroke();
+          }
+          polCtx.setLineDash([]);
+          polCtx.fillStyle = "var(--color-royal-blue)";
+          polCtx.fillText("Hy, Hz 磁力线 (闭合环流)", borderX - 70, H/2 + 105);
+
+        } else {
+          // Draw TM Mode: Hx is out of page. Electric fields (Ey, Ez) bend at boundary.
+          // Draw bent electric field lines
+          polCtx.strokeStyle = "rgba(185, 28, 28, 0.55)";
+          polCtx.lineWidth = 2;
+          
+          for (let y = 40; y < H; y += 45) {
+            polCtx.beginPath();
+            // Wave propagation phase
+            const phase = polTime - y * 0.03;
+            const amp = Math.sin(phase) * 20;
+            
+            // Left segment
+            polCtx.moveTo(0, y + amp);
+            polCtx.lineTo(borderX, y);
+            
+            // Right segment (refracted, bending sharply)
+            polCtx.lineTo(W, y + amp * 0.15); // Low resistivity shrinks field amplitude
+            polCtx.stroke();
+            
+            // Draw little arrows on E-lines
+            polCtx.fillStyle = "var(--color-crimson)";
+            polCtx.beginPath();
+            polCtx.arc(borderX / 2, y + amp * 0.5, 3, 0, 2*Math.PI);
+            polCtx.fill();
+          }
+          polCtx.fillStyle = "var(--color-crimson)";
+          polCtx.fillText("Ey, Ez 电场线 (跨界面发生屈服折射)", 15, H - 45);
+
+          // Draw charge accumulation on interface
+          for (let y = 30; y < H; y += 25) {
+            const chargePhase = Math.sin(polTime * 1.5 - y * 0.05);
+            if (Math.abs(chargePhase) > 0.45) {
+              const isPos = chargePhase > 0;
+              polCtx.fillStyle = isPos ? "var(--color-crimson)" : "var(--color-royal-blue)";
+              polCtx.font = "bold 12px monospace";
+              polCtx.fillText(isPos ? "+" : "-", borderX - 4, y);
+            }
+          }
+          polCtx.fillStyle = "var(--text-primary)";
+          polCtx.fillText("界面感应面电荷", borderX - 42, 35);
+        }
+
+        polAnimationId = requestAnimationFrame(polAnimLoop);
+      }
+
+      polAnimLoop();
+    }
+
+    // ----------------------------------------------------
+    // Widget 4: Numerical Methods Radar Comparative Chart
+    // ----------------------------------------------------
+    const radarSpecs = {
+      FDM: { name: "有限差分 (FDM)", scores: [1, 5, 5, 3, 3], color: "37, 99, 235" }, // terrain, speed, memory, stability, boundary
+      FEM: { name: "有限单元 (FEM)", scores: [5, 2, 3, 4, 4], color: "180, 83, 9" },
+      IE: { name: "积分方程 (IEM)", scores: [2, 1, 1, 5, 5], color: "22, 163, 74" },
+      FVM: { name: "有限体积 (FVM)", scores: [4, 3, 3, 5, 4], color: "124, 58, 237" }
+    };
+
+    function drawRadarChart() {
+      const svg = document.getElementById("radar-svg");
+      const desc = document.getElementById("radar-desc-panel");
+      if (!svg || !desc) return;
+
+      // Check which methods are checked
+      const checked = {
+        FDM: document.getElementById("chk-fdm").checked,
+        FEM: document.getElementById("chk-fem").checked,
+        IE: document.getElementById("chk-ie").checked,
+        FVM: document.getElementById("chk-fvm").checked
+      };
+
+      // Generate description report text
+      let descHtml = "";
+      let activeList = [];
+      Object.keys(checked).forEach(key => {
+        if (checked[key]) activeList.push(key);
+      });
+
+      if (activeList.length === 0) {
+        desc.innerHTML = `<span style="color:var(--text-muted);">请在上方勾选至少一种数值离散算法以查看对比。</span>`;
+        svg.innerHTML = "";
+        return;
+      }
+
+      // Display reports for checked methods
+      activeList.forEach(key => {
+        const spec = radarSpecs[key];
+        let info = "";
+        if (key === "FDM") info = "• <strong>直角网格差分</strong>：寻址效率极高，矩阵极为规则对称。适合多频点千万级节点的大反演。但受困于地形阶梯锯齿误差。";
+        else if (key === "FEM") info = "• <strong>非结构变分单元</strong>：地形拟合天花板。边元基函数完美克服强各向异性与界面伪解，是高精度剖析矿体、俯冲带的终极利器。";
+        else if (key === "IE") info = "• <strong>二次源积分</strong>：免边界匹配层，仅剖分局部矿块。计算量和内存随单元 $O(N^3)$ 爆发，只适用于孤立深埋地质体。";
+        else if (key === "FVM") info = "• <strong>容积守恒控制</strong>：严格电磁守恒。高电阻对比稳定性卓越，适合临海、高阻岩基强突变地表计算。";
+        
+        descHtml += `<p style="font-size:12.5px; margin-bottom: 6px;">${info}</p>`;
+      });
+      desc.innerHTML = descHtml;
+
+      // Draw SVG Radar Chart
+      const cx = 100, cy = 100, r = 70;
+      const metrics = ["地形适应", "计算速度", "内存节省", "对比稳定性", "边界条件"];
+      
+      let svgHtml = ``;
+
+      // Draw pentagon grid rings (levels 1 to 5)
+      for (let g = 1; g <= 5; g++) {
+        const pts = [];
+        const ringRadius = r * g / 5;
+        for (let i = 0; i < 5; i++) {
+          const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+          const px = cx + ringRadius * Math.cos(angle);
+          const py = cy + ringRadius * Math.sin(angle);
+          pts.push(`${px},${py}`);
+        }
+        svgHtml += `<polygon points="${pts.join(' ')}" fill="none" stroke="#cbd5e1" stroke-width="0.5"/>`;
+      }
+
+      // Draw axis lines and labels
+      for (let i = 0; i < 5; i++) {
+        const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+        const sx = cx + r * Math.cos(angle);
+        const sy = cy + r * Math.sin(angle);
+        svgHtml += `<line x1="${cx}" y1="${cy}" x2="${sx}" y2="${sy}" stroke="#cbd5e1" stroke-width="0.8" />`;
+        
+        // Axis label
+        const lx = cx + (r + 14) * Math.cos(angle);
+        const ly = cy + (r + 10) * Math.sin(angle);
+        svgHtml += `<text x="${lx}" y="${ly}" font-size="8" font-weight="700" text-anchor="middle" alignment-baseline="middle" fill="var(--text-secondary)">${metrics[i]}</text>`;
+      }
+
+      // Draw filled polygons for checked methods
+      activeList.forEach(key => {
+        const spec = radarSpecs[key];
+        const pts = [];
+        for (let i = 0; i < 5; i++) {
+          const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+          const score = spec.scores[i];
+          const valRadius = r * score / 5;
+          const px = cx + valRadius * Math.cos(angle);
+          const py = cy + valRadius * Math.sin(angle);
+          pts.push(`${px},${py}`);
+        }
+        // Polygon face
+        svgHtml += `<polygon points="${pts.join(' ')}" fill="rgba(${spec.color}, 0.25)" stroke="rgb(${spec.color})" stroke-width="1.8" />`;
+        
+        // Marker dots
+        pts.forEach(ptStr => {
+          const [px, py] = ptStr.split(',');
+          svgHtml += `<circle cx="${px}" cy="${py}" r="3.5" fill="rgb(${spec.color})" />`;
+        });
+      });
+
+      svg.innerHTML = svgHtml;
+    }
+
+    // ----------------------------------------------------
+    // Widget 5: Solver Convergence Simulator
+    // ----------------------------------------------------
+    let convSvg;
+    let convPoints = [];
+    let convSimStep = 0;
+    let maxSteps = 100;
+    
+    function initConvergencePlot() {
+      convSvg = document.getElementById("conv-svg");
+      if (!convSvg) return;
+      
+      // Draw static axes background
+      drawConvPlotBackground();
+    }
+    
+    function drawConvPlotBackground() {
+      if (!convSvg) return;
+      const W = 340, H = 250;
+      const left = 45, right = 15, top = 20, bottom = 40;
+      
+      let html = ``;
+      
+      // Horizontal grid lines (for log residual: 10^0 to 10^-8)
+      for (let i = 0; i >= -8; i--) {
+        const y = top + ((0 - i) / 8) * (H - top - bottom);
+        html += `<line x1="${left}" y1="${y}" x2="${W - right}" y2="${y}" class="grid-line" />`;
+        html += `<text x="${left - 8}" y="${y + 4}" text-anchor="end" class="plot-axis-label">10${i === 0 ? '' : '^{' + i + '}'}</text>`;
+      }
+      
+      // Vertical grid lines (for Iterations: 0 to 100)
+      for (let step = 0; step <= 100; step += 20) {
+        const x = left + (step / 100) * (W - left - right);
+        html += `<line x1="${x}" y1="${top}" x2="${x}" y2="${H - bottom}" class="grid-line" />`;
+        html += `<text x="${x}" y="${H - bottom + 16}" text-anchor="middle" class="plot-axis-label">${step}</text>`;
+      }
+      
+      // Axes
+      html += `<line x1="${left}" y1="${top}" x2="${left}" y2="${H - bottom}" class="axis-line" />`;
+      html += `<line x1="${left}" y1="${H - bottom}" x2="${W - right}" y2="${H - bottom}" class="axis-line" />`;
+      html += `<text x="${W/2}" y="${H - 8}" text-anchor="middle" font-size="10" fill="var(--text-muted)">迭代步数 (Iterations)</text>`;
+      
+      convSvg.innerHTML = html;
+    }
+    
+    function runConvergenceSim() {
+      const solver = document.getElementById("conv-solver").value;
+      const prec = document.getElementById("conv-prec").value;
+      const contrast = document.getElementById("conv-contrast").value;
+      const statusText = document.getElementById("conv-status-text");
+      
+      if (convAnimationId) {
+        cancelAnimationFrame(convAnimationId);
+      }
+      
+      convPoints = [];
+      convSimStep = 0;
+      
+      // Define target steps and decay behavior based on selection
+      // AMG preconditioning yields extremely fast convergence
+      // No preconditioning with high contrast ratio will fail or oscilliate
+      let convergeStepLimit = 60;
+      let finalRes = 1e-8;
+      let fails = false;
+      let speedFactor = 0.2; // log residual decay per step
+      
+      if (solver === "direct") {
+        convergeStepLimit = 1;
+        finalRes = 1e-15;
+      } else {
+        // Iterative solvers
+        let baseDecay = 0.12; // default GMRES
+        if (solver === "bicg") baseDecay = 0.18; // BiCGSTAB converges faster but oscillates more
+        
+        let precMult = 1.0;
+        if (prec === "amg") {
+          precMult = 3.5; // AMG is powerful
+          convergeStepLimit = 15;
+        } else if (prec === "ilu") {
+          precMult = 1.4;
+          convergeStepLimit = 40;
+        } else {
+          // No preconditioner
+          precMult = 0.3;
+          convergeStepLimit = 100;
+          if (contrast === "med" || contrast === "high") {
+            fails = true;
+          }
+        }
+        
+        let contrastMult = 1.0;
+        if (contrast === "med") contrastMult = 0.6;
+        else if (contrast === "high") contrastMult = 0.15;
+        
+        speedFactor = baseDecay * precMult * contrastMult;
+      }
+      
+      statusText.innerHTML = "正在启动计算引擎...";
+      statusText.style.color = "var(--color-amber)";
+      
+      const W = 340, H = 250;
+      const left = 45, right = 15, top = 20, bottom = 40;
+      
+      function simLoop() {
+        convSimStep++;
+        
+        let currentResLog = 0;
+        
+        if (solver === "direct") {
+          currentResLog = -15;
+          convPoints.push({step: 1, resLog: -15});
+        } else {
+          // Simulate iteration error curve
+          let noise = (Math.random() - 0.5) * 0.4;
+          // BiCGSTAB has high oscillation
+          if (solver === "bicg" && prec !== "amg") {
+            noise = (Math.random() - 0.5) * 1.8;
+          }
+          
+          if (fails) {
+            // Fails: stalls at high residual (condition number too bad)
+            const floor = contrast === "high" ? -1.0 : -2.5;
+            currentResLog = Math.max(floor + noise, 0 - convSimStep * speedFactor + noise);
+          } else {
+            // Converges
+            currentResLog = Math.max(-8.5, 0 - convSimStep * speedFactor + noise);
+          }
+          convPoints.push({step: convSimStep, resLog: currentResLog});
+        }
+        
+        // Redraw SVG with curves
+        drawConvPlotBackground();
+        
+        // Draw line
+        let dPath = "";
+        convPoints.forEach((pt, idx) => {
+          const px = left + (pt.step / 100) * (W - left - right);
+          // Map log residual 0 to -8
+          const clampedLog = Math.max(-8, Math.min(0, pt.resLog));
+          const py = top + ((0 - clampedLog) / 8) * (H - top - bottom);
+          if (idx === 0) dPath += `M ${px} ${py}`;
+          else dPath += ` L ${px} ${py}`;
+        });
+        
+        const pathColor = solver === "bicg" ? "var(--color-crimson)" : "var(--color-royal-blue)";
+        convSvg.innerHTML += `<path d="${dPath}" fill="none" stroke="${pathColor}" stroke-width="2.5" />`;
+        
+        // Highlight last point
+        if (convPoints.length > 0) {
+          const last = convPoints[convPoints.length - 1];
+          const px = left + (last.step / 100) * (W - left - right);
+          const clampedLog = Math.max(-8, Math.min(0, last.resLog));
+          const py = top + ((0 - clampedLog) / 8) * (H - top - bottom);
+          convSvg.innerHTML += `<circle cx="${px}" cy="${py}" r="4" fill="var(--color-amber)" />`;
+        }
+        
+        // Check termination
+        if (solver === "direct") {
+          statusText.innerHTML = "直接解法(LU)完成！求解耗时: 6.2s。<br><span style='color:var(--color-purple)'>内存消耗: 38.5 GB (高)</span>";
+          return;
+        }
+        
+        const lastPt = convPoints[convPoints.length - 1];
+        if (lastPt.resLog <= -7.0) {
+          statusText.innerHTML = `迭代解法成功收敛！迭代次数: ${convSimStep} 次。<br><span style='color:var(--color-forest-green)'>内存占用: 1.8 GB (省)</span>`;
+          statusText.style.color = "var(--color-forest-green)";
+          return;
+        }
+        
+        if (convSimStep >= 100) {
+          if (fails) {
+            statusText.innerHTML = "❌ 警告: 求解发散或陷入停滞！<br>矩阵高对比度条件数过大。请启用 AMG/ILU 预条件器。";
+            statusText.style.color = "var(--color-crimson)";
+          } else {
+            statusText.innerHTML = "迭代达到步数上限！";
+          }
+          return;
+        }
+        
+        convAnimationId = setTimeout(simLoop, 40);
+      }
+      
+      simLoop();
+    }
+
+    // ----------------------------------------------------
+    // Widget 6: AI OOD (Out-of-Distribution) Defensive Simulator
+    // ----------------------------------------------------
+    let oodSvg;
+    
+    function initOODPlot() {
+      oodSvg = document.getElementById("ood-svg");
+      if (!oodSvg) return;
+      
+      runOODSimulation();
+    }
+    
+    function runOODSimulation() {
+      const contrastEl = document.getElementById("ood-contrast");
+      const slopeEl = document.getElementById("ood-slope");
+      const statusText = document.getElementById("ood-status-text");
+      const alarmBanner = document.getElementById("ood-alarm");
+      
+      if (!contrastEl || !slopeEl || !oodSvg) return;
+      
+      const contrastExp = parseFloat(contrastEl.value);
+      const slope = parseFloat(slopeEl.value);
+      const contrast = Math.pow(10, contrastExp);
+      
+      document.getElementById("ood-contrast-val").innerText = contrast >= 1000000 ? "10^6 : 1" : contrast.toFixed(0) + " : 1";
+      document.getElementById("ood-slope-val").innerText = slope + "°";
+      
+      // Calculate Mahalanobis distance
+      // Training base distribution: contrastExp mean=2.0, slope mean=5.0
+      // Ellipse bounds: contrastExp (1 to 3.5), slope (0 to 18)
+      const dist = Math.sqrt(Math.pow((contrastExp - 2) / 0.8, 2) + Math.pow((slope - 5) / 6, 2));
+      
+      // Draw Plot
+      const W = 250, H = 250;
+      const cx = W / 2, cy = H / 2;
+      
+      let html = ``;
+      
+      // 1. Draw grid background
+      html += `<rect x="0" y="0" width="${W}" height="${H}" fill="#f6efe2" stroke="#e6dfd3" />`;
+      html += `<line x1="${cx}" y1="0" x2="${cx}" y2="${H}" stroke="rgba(203,213,225,0.8)" stroke-width="1" />`;
+      html += `<line x1="0" y1="${cy}" x2="${W}" y2="${cy}" stroke="rgba(203,213,225,0.8)" stroke-width="1" />`;
+      
+      // 2. Draw 3-sigma training confidence envelope (In-distribution ellipse)
+      // Radius along X (contrast) is 0.8 * 30px = 24px, along Y (slope) is 6 * 4px = 24px
+      const rx = 0.8 * 45; // scale factor
+      const ry = 6 * 3.5;
+      
+      html += `<ellipse cx="${cx}" cy="${cy}" rx="${rx * 3}" ry="${ry * 3}" fill="rgba(22, 163, 74, 0.08)" stroke="var(--color-forest-green)" stroke-width="1.5" stroke-dasharray="4 2" />`;
+      html += `<text x="${cx}" y="${cy - ry*3.2}" text-anchor="middle" font-size="8" fill="var(--color-forest-green)">3&sigma; 训练分布包络边界</text>`;
+      
+      // 3. Map current model point
+      // Map contrastExp (1 to 6) to X (30 to 220)
+      const px = cx + (contrastExp - 2) * 35;
+      // Map slope (0 to 45) to Y (cy down to top)
+      const py = cy - (slope - 5) * 3.2;
+      
+      // Draw path indicator line
+      html += `<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" stroke="rgba(180, 83, 9, 0.5)" stroke-width="1.2" />`;
+      
+      // Draw current dot
+      const dotColor = dist > 3.0 ? "var(--color-crimson)" : "var(--color-forest-green)";
+      html += `<circle cx="${px}" cy="${py}" r="6" fill="${dotColor}" class="glowing-dot" />`;
+      html += `<circle cx="${px}" cy="${py}" r="10" fill="none" stroke="${dotColor}" stroke-width="1" />`;
+      
+      // Draw axis tags
+      html += `<text x="${W - 5}" y="${cy - 4}" text-anchor="end" font-size="8" fill="var(--text-muted)">电阻率对比度 &rarr;</text>`;
+      html += `<text x="${cx + 4}" y="10" text-anchor="start" font-size="8" fill="var(--text-muted)">地表坡度 &uarr;</text>`;
+
+      oodSvg.innerHTML = html;
+      
+      const score = Math.max(0, 1 - (dist / 4.5)).toFixed(2);
+      
+      // Update logic and routing Fallback message
+      if (dist > 3.0) {
+        alarmBanner.style.display = "block";
+        statusText.innerHTML = `AI 适用度评分: <b>${score} (极低风险发散)</b><br>马氏距离 D_OOD = <b>${dist.toFixed(2)} &gt; 3.0</b><br><span style='color:var(--color-crimson)'>总控机制已切断 AI，强制重路由退回传统有限元 (FEM) 数值引擎计算。</span>`;
+        statusText.style.color = "var(--color-crimson)";
+      } else {
+        alarmBanner.style.display = "none";
+        statusText.innerHTML = `AI 适用度评分: <b>${score} (安全)</b><br>马氏距离 D_OOD = <b>${dist.toFixed(2)} &le; 3.0</b><br><span style='color:var(--color-forest-green)'>输入安全。挂载 AI Surrogate 快速计算信道 (时耗约 0.15s)。</span>`;
+        statusText.style.color = "var(--color-forest-green)";
+      }
+    }
+
+    // ----------------------------------------------------
+    // Three.js 3D WebGL renderers implementation
+    // ----------------------------------------------------
+
+    // 1. Slide 11 (Dimension Viewer)
+    function initDim3DScene() {
+      const container = document.getElementById("dim-3d-canvas");
+      if (!container) return;
+
+      if (typeof THREE === 'undefined') {
+        container.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-secondary); padding:20px; text-align:center; background:var(--widget-canvas-bg); border:1px solid var(--border-color); border-radius:12px;">
+            <p style="font-size:18px; font-weight:bold; color:var(--color-crimson); margin-bottom:8px;">⚠️ 3D 渲染组件加载失败</p>
+            <p style="font-size:13px; max-width:400px; margin-bottom:4px;">未检测到 Three.js 库。这通常是因为本地离线或网络原因无法加载 CDN 资源，或者浏览器安全设置拦截了外部脚本。</p>
+            <p style="font-size:12px; color:var(--text-muted);">（其他控制方程、2D 模拟等交互依然可用）</p>
+          </div>
+        `;
+        return;
+      }
+
+      const W = container.clientWidth, H = container.clientHeight;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xfaf6ee);
+
+      const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+      camera.position.set(5.5, 3.5, 7.5);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(W, H);
+      container.appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 + 0.1;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.75);
+      dirLight.position.set(5, 10, 5);
+      scene.add(dirLight);
+
+      // Add a coordinate helper grid
+      const gridHelper = new THREE.GridHelper(8, 8, 0xb45309, 0xe6dfd3);
+      gridHelper.position.y = -1.5;
+      scene.add(gridHelper);
+
+      const meshGroup = new THREE.Group();
+      scene.add(meshGroup);
+
+      threeInstances.dim = { renderer, scene, camera, controls, meshGroup, animationId: null };
+
+      function animate() {
+        threeInstances.dim.animationId = requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    function switchDim3D(dim) {
+      selectedDim3D = dim;
+      const inst = threeInstances.dim;
+      if (!inst || !inst.scene) return;
+
+      const dims = ["1D", "2D", "3D"];
+      dims.forEach(d => {
+        const btn = document.getElementById(`dim-${d.toLowerCase()}-btn`);
+        if (btn) {
+          if (d === dim) btn.classList.add("active");
+          else btn.classList.remove("active");
+        }
+      });
+
+      const textEl = document.getElementById("dim-detail-text");
+      const group = inst.meshGroup;
+      
+      while(group.children.length > 0) {
+        const obj = group.children[0];
+        group.remove(obj);
+      }
+
+      // Base Box wireframe skeleton
+      const wireframeGeom = new THREE.BoxGeometry(4, 3, 4);
+      const edges = new THREE.EdgesGeometry(wireframeGeom);
+      const lineMaterial = new THREE.LineBasicMaterial({ color: 0x8c7e6b, linewidth: 1 });
+      const boxWireframe = new THREE.LineSegments(edges, lineMaterial);
+      group.add(boxWireframe);
+
+      if (dim === "1D") {
+        textEl.innerHTML = `
+          <p>• <strong>物性假设</strong>：地下电性仅随垂直深度 $z$ 方向改变，水平 $x, y$ 轴方向无限均匀。</p>
+          <p style="margin-top: 5px;">• <strong>正正演计算复杂度</strong>：低。由于微分方程降阶为一维常微分方程，地表复阻抗存在严密的解析迭代解，计算耗时仅为微秒级，可作为反演程序精度检验的标准标定库。</p>
+        `;
+
+        const hGeoms = [
+          new THREE.BoxGeometry(3.98, 1.0, 3.98),
+          new THREE.BoxGeometry(3.98, 1.0, 3.98),
+          new THREE.BoxGeometry(3.98, 1.0, 3.98)
+        ];
+        const colors = [0xe6dfd3, 0xd4cbb9, 0xb8ab97];
+        hGeoms.forEach((geom, idx) => {
+          const mat = new THREE.MeshLambertMaterial({ color: colors[idx], transparent: true, opacity: 0.85 });
+          const mesh = new THREE.Mesh(geom, mat);
+          mesh.position.y = 1.0 - idx * 1.0;
+          group.add(mesh);
+        });
+
+      } else if (dim === "2D") {
+        textEl.innerHTML = `
+          <p>• <strong>物性假设</strong>：电阻率 $\\sigma(y,z)$ 仅在 $y-z$ 面剖面内突变，沿着走向 $x$ 方向完全均匀。</p>
+          <p style="margin-top: 5px;">• <strong>正正演计算复杂度</strong>：中等。解耦为 TE 极化和 TM 极化两个独立二维偏微分方程。走向边界处的场分布非常关键，目前多保真或迭代求解器能在几秒内完成单频求解。</p>
+        `;
+
+        // Background box
+        const bgGeom = new THREE.BoxGeometry(3.98, 2.98, 3.98);
+        const bgMat = new THREE.MeshLambertMaterial({ color: 0xe6dfd3, transparent: true, opacity: 0.65 });
+        const bgMesh = new THREE.Mesh(bgGeom, bgMat);
+        group.add(bgMesh);
+
+        // 2D strike anomaly box extending along X axis (4m length)
+        const anomalyGeom = new THREE.BoxGeometry(4.0, 1.0, 1.6);
+        const anomalyMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
+        const anomalyMesh = new THREE.Mesh(anomalyGeom, anomalyMat);
+        anomalyMesh.position.set(0, -0.2, 0);
+        group.add(anomalyMesh);
+
+      } else if (dim === "3D") {
+        textEl.innerHTML = `
+          <p>• <strong>物性假设</strong>：地下电阻率在 $x, y, z$ 三个维度上任意突变变化，贴合最真实的地质起伏。</p>
+          <p style="margin-top: 5px;">• <strong>正正演计算复杂度</strong>：极高。六分量强耦合，无法解耦，必须装配上百万维复稀疏病态代数阵，消耗巨大的内存与求解时间。这也是科学家极力研发 AI Surrogate 和 FNO 的原因。</p>
+        `;
+
+        const bgGeom = new THREE.BoxGeometry(3.98, 2.98, 3.98);
+        const bgMat = new THREE.MeshLambertMaterial({ color: 0xe6dfd3, transparent: true, opacity: 0.45 });
+        const bgMesh = new THREE.Mesh(bgGeom, bgMat);
+        group.add(bgMesh);
+
+        // Localized 3D anomaly bodies
+        const localGeom1 = new THREE.SphereGeometry(0.7, 32, 32);
+        const localMat1 = new THREE.MeshLambertMaterial({ color: 0xb45309 });
+        const localMesh1 = new THREE.Mesh(localGeom1, localMat1);
+        localMesh1.position.set(-0.6, 0.3, -0.6);
+        group.add(localMesh1);
+
+        const localGeom2 = new THREE.BoxGeometry(1.2, 0.8, 1.2);
+        const localMat2 = new THREE.MeshLambertMaterial({ color: 0x7c3aed });
+        const localMesh2 = new THREE.Mesh(localGeom2, localMat2);
+        localMesh2.position.set(0.6, -0.5, 0.6);
+        group.add(localMesh2);
+      }
+
+      if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+        window.MathJax.typeset([textEl]);
+      }
+    }
+
+    // 2. Slide 14 (Yee Staggered Cell)
+    function initYee3DScene() {
+      const container = document.getElementById("yee-3d-canvas");
+      if (!container) return;
+
+      if (typeof THREE === 'undefined') {
+        container.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-secondary); padding:20px; text-align:center; background:var(--widget-canvas-bg); border:1px solid var(--border-color); border-radius:12px;">
+            <p style="font-size:18px; font-weight:bold; color:var(--color-crimson); margin-bottom:8px;">⚠️ 3D 渲染组件加载失败</p>
+            <p style="font-size:13px; max-width:400px; margin-bottom:4px;">未检测到 Three.js 库。这通常是因为本地离线或网络原因无法加载 CDN 资源，或者浏览器安全设置拦截了外部脚本。</p>
+            <p style="font-size:12px; color:var(--text-muted);">（其他控制方程、2D 模拟等交互依然可用）</p>
+          </div>
+        `;
+        return;
+      }
+
+      const W = container.clientWidth, H = container.clientHeight;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xfaf6ee);
+
+      const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+      camera.position.set(5.5, 3.5, 6.5);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(W, H);
+      container.appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.75);
+      dirLight.position.set(3, 10, 5);
+      scene.add(dirLight);
+
+      // Translucent Yee Box skeleton
+      const boxGeom = new THREE.BoxGeometry(3, 3, 3);
+      const boxEdges = new THREE.EdgesGeometry(boxGeom);
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x8c7e6b, linewidth: 2.5 });
+      const gridBox = new THREE.LineSegments(boxEdges, lineMat);
+      scene.add(gridBox);
+
+      const eGroup = new THREE.Group();
+      const hGroup = new THREE.Group();
+      scene.add(eGroup);
+      scene.add(hGroup);
+
+      // 12 E Arrow helpers on edges (Red)
+      const edgeVectors = [
+        // 4 X-aligned edges
+        { start: new THREE.Vector3(-1.5, -1.5, -1.5), dir: new THREE.Vector3(1, 0, 0) },
+        { start: new THREE.Vector3(-1.5, 1.5, -1.5), dir: new THREE.Vector3(1, 0, 0) },
+        { start: new THREE.Vector3(-1.5, -1.5, 1.5), dir: new THREE.Vector3(1, 0, 0) },
+        { start: new THREE.Vector3(-1.5, 1.5, 1.5), dir: new THREE.Vector3(1, 0, 0) },
+        // 4 Y-aligned edges
+        { start: new THREE.Vector3(-1.5, -1.5, -1.5), dir: new THREE.Vector3(0, 1, 0) },
+        { start: new THREE.Vector3(1.5, -1.5, -1.5), dir: new THREE.Vector3(0, 1, 0) },
+        { start: new THREE.Vector3(-1.5, -1.5, 1.5), dir: new THREE.Vector3(0, 1, 0) },
+        { start: new THREE.Vector3(1.5, -1.5, 1.5), dir: new THREE.Vector3(0, 1, 0) },
+        // 4 Z-aligned edges
+        { start: new THREE.Vector3(-1.5, -1.5, -1.5), dir: new THREE.Vector3(0, 0, 1) },
+        { start: new THREE.Vector3(1.5, -1.5, -1.5), dir: new THREE.Vector3(0, 0, 1) },
+        { start: new THREE.Vector3(-1.5, 1.5, -1.5), dir: new THREE.Vector3(0, 0, 1) },
+        { start: new THREE.Vector3(1.5, 1.5, -1.5), dir: new THREE.Vector3(0, 0, 1) }
+      ];
+
+      edgeVectors.forEach(edge => {
+        const arrowLength = 1.3;
+        const arrowCenter = edge.start.clone().add(edge.dir.clone().multiplyScalar(1.5 - arrowLength/2));
+        const arrowHelper = new THREE.ArrowHelper(edge.dir, arrowCenter, arrowLength, 0xb91c1c, 0.35, 0.22);
+        eGroup.add(arrowHelper);
+      });
+
+      // 6 H Arrow helpers on face centers (Blue)
+      const faceVectors = [
+        { center: new THREE.Vector3(1.5, 0, 0), dir: new THREE.Vector3(1, 0, 0) },
+        { center: new THREE.Vector3(-1.5, 0, 0), dir: new THREE.Vector3(-1, 0, 0) },
+        { center: new THREE.Vector3(0, 1.5, 0), dir: new THREE.Vector3(0, 1, 0) },
+        { center: new THREE.Vector3(0, -1.5, 0), dir: new THREE.Vector3(0, -1, 0) },
+        { center: new THREE.Vector3(0, 0, 1.5), dir: new THREE.Vector3(0, 0, 1) },
+        { center: new THREE.Vector3(0, 0, -1.5), dir: new THREE.Vector3(0, 0, -1) }
+      ];
+
+      faceVectors.forEach(face => {
+        const arrowLength = 1.1;
+        const arrowStart = face.center.clone().sub(face.dir.clone().multiplyScalar(0.2));
+        const arrowHelper = new THREE.ArrowHelper(face.dir, arrowStart, arrowLength, 0x2563eb, 0.3, 0.2);
+        hGroup.add(arrowHelper);
+      });
+
+      threeInstances.yee = { renderer, scene, camera, controls, eGroup, hGroup, animationId: null };
+
+      function animate() {
+        threeInstances.yee.animationId = requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    function toggleYeeE() {
+      const show = document.getElementById("show-e-fields").checked;
+      const inst = threeInstances.yee;
+      if (inst && inst.eGroup) inst.eGroup.visible = show;
+    }
+
+    function toggleYeeH() {
+      const show = document.getElementById("show-h-fields").checked;
+      const inst = threeInstances.yee;
+      if (inst && inst.hGroup) inst.hGroup.visible = show;
+    }
+
+    // 3. Slide 17 (FEM Mesh with Cutting Plane)
+    function initFEM3DScene() {
+      const container = document.getElementById("fem-3d-canvas");
+      if (!container) return;
+
+      if (typeof THREE === 'undefined') {
+        container.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-secondary); padding:20px; text-align:center; background:var(--widget-canvas-bg); border:1px solid var(--border-color); border-radius:12px;">
+            <p style="font-size:18px; font-weight:bold; color:var(--color-crimson); margin-bottom:8px;">⚠️ 3D 渲染组件加载失败</p>
+            <p style="font-size:13px; max-width:400px; margin-bottom:4px;">未检测到 Three.js 库。这通常是因为本地离线或网络原因无法加载 CDN 资源，或者浏览器安全设置拦截了外部脚本。</p>
+            <p style="font-size:12px; color:var(--text-muted);">（其他控制方程、2D 模拟等交互依然可用）</p>
+          </div>
+        `;
+        return;
+      }
+
+      const W = container.clientWidth, H = container.clientHeight;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xfaf6ee);
+
+      const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+      camera.position.set(6, 4, 8);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(W, H);
+      renderer.localClippingEnabled = true;
+      container.appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 + 0.1;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+      dirLight.position.set(4, 10, 4);
+      scene.add(dirLight);
+
+      // Clipping plane along Y axis
+      const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+
+      const meshGroup = new THREE.Group();
+      scene.add(meshGroup);
+
+      // 3D Topography Plane (Sine-cosine mountain)
+      const terrainGeo = new THREE.PlaneGeometry(5, 5, 14, 14);
+      terrainGeo.rotateX(-Math.PI / 2);
+      
+      const pos = terrainGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const height = Math.cos(x * 0.75) * Math.cos(z * 0.75) * 0.9;
+        pos.setY(i, height);
+      }
+      terrainGeo.computeVertexNormals();
+
+      const terrainMat = new THREE.MeshLambertMaterial({ 
+        color: 0xd4cbb9, 
+        wireframe: true, 
+        clippingPlanes: [clipPlane]
+      });
+      const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+      meshGroup.add(terrain);
+
+      // Underground finite element tetra mesh grid simulation
+      const gridGeo = new THREE.BoxGeometry(4.6, 2.5, 4.6, 10, 5, 10);
+      const gridMat = new THREE.MeshLambertMaterial({
+        color: 0x8c7e6b,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.18,
+        clippingPlanes: [clipPlane]
+      });
+      const grid = new THREE.Mesh(gridGeo, gridMat);
+      grid.position.y = -1.25;
+      meshGroup.add(grid);
+
+      // Underground high-contrast target anomaly (Red sphere representing low resistance ore)
+      const anomalyGeo = new THREE.SphereGeometry(0.7, 32, 32);
+      const anomalyMat = new THREE.MeshLambertMaterial({
+        color: 0xb91c1c,
+        emissive: 0x3a0000,
+        clippingPlanes: [clipPlane]
+      });
+      const anomalyMesh = new THREE.Mesh(anomalyGeo, anomalyMat);
+      anomalyMesh.position.set(0, -0.9, 0);
+      meshGroup.add(anomalyMesh);
+
+      // Deep earth floor
+      const floorGeo = new THREE.PlaneGeometry(5, 5);
+      floorGeo.rotateX(-Math.PI / 2);
+      const floorMat = new THREE.MeshBasicMaterial({ color: 0xe6dfd3, side: THREE.DoubleSide });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.position.y = -2.5;
+      meshGroup.add(floor);
+
+      threeInstances.fem = { renderer, scene, camera, controls, clipPlane, meshGroup, animationId: null };
+
+      function animate() {
+        threeInstances.fem.animationId = requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+      
+      updateFEMClip();
+    }
+
+    function updateFEMClip() {
+      const slider = document.getElementById("fem-clip-slider");
+      const inst = threeInstances.fem;
+      if (slider && inst && inst.clipPlane) {
+        const val = parseFloat(slider.value);
+        inst.clipPlane.constant = val / 2.0;
+        document.getElementById("fem-clip-val").innerText = val.toFixed(1);
+      }
+    }
+  </script>
+</body>
+</html>

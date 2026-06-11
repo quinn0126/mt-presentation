@@ -1,0 +1,3270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大地电磁 (MT) 多 Agent 智能正演工作流平台</title>
+  <meta name="description" content="展示大地电磁法 (MT) 多 Agent 智能正演工作流及其交互关系。基于物理约束、多保真融合与闭环反馈的下一代智能正演系统。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+  <style>
+    :root {
+      --bg-dark: #070a13;
+      --bg-panel: #0d1326;
+      --bg-card: rgba(18, 26, 48, 0.75);
+      --bg-card-hover: rgba(26, 37, 69, 0.9);
+      --border-color: #1e294b;
+      --border-color-active: #00f2fe;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --color-cyan: #00f2fe;
+      --color-purple: #c084fc;
+      --color-green: #22c55e;
+      --color-neon-green: #39ff14;
+      --color-red: #f43f5e;
+      --color-neon-red: #ff3366;
+      --color-blue: #3b82f6;
+      --color-yellow: #eab308;
+
+      /* Themes default variables */
+      --svg-bg-color: #050811;
+      --grid-stroke: rgba(30, 41, 75, 0.15);
+      --stage-boundary-fill: rgba(13, 19, 38, 0.3);
+      --stage-boundary-stroke: rgba(30, 41, 75, 0.4);
+      --node-rect-fill: #10182f;
+      --node-rect-stroke: #2a3c6e;
+      --node-hover-fill: #172445;
+      --node-title-color: #e2e8f0;
+      --node-active-fill: #112d3c;
+      --node-active-success-fill: #0f2d1d;
+      --node-active-rework-fill: #2f131b;
+      --node-title-active-color: #ffffff;
+      --flow-line-stroke: #7da2ff; /* Brighter steel-blue line in dark mode */
+      --feedback-line-stroke: rgba(244, 63, 94, 0.65); /* Clearer feedback dashed red */
+      --support-line-stroke: rgba(59, 130, 246, 0.15); /* Dotted blue lines */
+      --orchestrator-line-stroke: rgba(59, 130, 246, 0.3);
+      --btn-clear-bg: rgba(30, 41, 75, 0.85);
+      --btn-clear-border: #3b528b;
+      --btn-clear-text: #f8fafc;
+      --header-bg: linear-gradient(135deg, rgba(13, 19, 38, 0.9) 0%, rgba(7, 10, 19, 0.9) 100%);
+      --header-title-color: linear-gradient(to right, #ffffff 30%, var(--color-cyan) 100%);
+      --tab-btn-bg: rgba(30, 41, 75, 0.4);
+      --panel-header-bg: rgba(13, 19, 38, 0.5);
+      --console-bg: #030712;
+      --console-header-bg: #090d16;
+      --console-text: #e2e8f0;
+      --json-bg: #040711;
+      --json-text: #38bdf8;
+      --math-bg: #040711;
+      --math-text: #e2e8f0;
+      --input-bg: #0f172a;
+      
+      --controls-bg: rgba(13, 19, 38, 0.3);
+      --controls-text: var(--text-secondary);
+      --fs-controls-bg: rgba(13, 19, 38, 0.95);
+      --fs-controls-text: #ffffff;
+      --color-active-link: #00f2fe;
+      --color-rework-link: #ff3366;
+    }
+
+    body.theme-light {
+      --bg-dark: #f1f5f9;
+      --bg-panel: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.75);
+      --bg-card-hover: rgba(241, 245, 249, 0.9);
+      --border-color: #cbd5e1;
+      --border-color-active: var(--color-blue);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      
+      --svg-bg-color: #f8fafc;
+      --grid-stroke: rgba(148, 163, 184, 0.2);
+      --stage-boundary-fill: rgba(241, 245, 249, 0.5);
+      --stage-boundary-stroke: rgba(148, 163, 184, 0.4);
+      --node-rect-fill: #ffffff;
+      --node-rect-stroke: #cbd5e1;
+      --node-hover-fill: #f1f5f9;
+      --node-title-color: #0f172a;
+      --node-active-fill: #e0f2fe;
+      --node-active-success-fill: #dcfce7;
+      --node-active-rework-fill: #ffe4e6;
+      --node-title-active-color: #0f172a;
+      --flow-line-stroke: #475569; /* Brighter high contrast slate gray-blue line */
+      --feedback-line-stroke: rgba(220, 38, 38, 0.65); /* Brighter feedback red */
+      --support-line-stroke: rgba(37, 99, 235, 0.15);
+      --orchestrator-line-stroke: rgba(37, 99, 235, 0.3);
+      --btn-clear-bg: #cbd5e1; /* Darker gray for higher contrast */
+      --btn-clear-border: #94a3b8;
+      --btn-clear-text: #0f172a;
+      --header-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(241, 245, 249, 0.9) 100%);
+      --header-title-color: linear-gradient(to right, #0f172a 30%, var(--color-blue) 100%);
+      --tab-btn-bg: rgba(226, 232, 240, 0.6);
+      --panel-header-bg: rgba(248, 250, 252, 0.7);
+      --console-bg: #f8fafc;
+      --console-header-bg: #e2e8f0;
+      --console-text: #0f172a;
+      --json-bg: #f1f5f9;
+      --json-text: #0284c7;
+      --math-bg: #f1f5f9;
+      --math-text: #0f172a;
+      --input-bg: #ffffff;
+      
+      --controls-bg: rgba(226, 232, 240, 0.65);
+      --controls-text: var(--text-primary);
+      --fs-controls-bg: rgba(255, 255, 255, 0.95);
+      --fs-controls-text: var(--text-primary);
+      --color-active-link: #2563eb;
+      --color-rework-link: #b91c1c;
+    }
+
+    body.theme-warm {
+      --bg-dark: #faf6ef;
+      --bg-panel: #fdfbf7;
+      --bg-card: rgba(253, 251, 247, 0.75);
+      --bg-card-hover: rgba(245, 240, 230, 0.9);
+      --border-color: #e6dfd3;
+      --border-color-active: var(--color-yellow);
+      --text-primary: #3c2f1d;
+      --text-secondary: #6e5e49;
+      --text-muted: #8c7e6b;
+      
+      --svg-bg-color: #f6efe2;
+      --grid-stroke: rgba(140, 126, 107, 0.18);
+      --stage-boundary-fill: rgba(245, 240, 230, 0.5);
+      --stage-boundary-stroke: rgba(180, 170, 150, 0.4);
+      --node-rect-fill: #fdfbf7;
+      --node-rect-stroke: #cbd5e1;
+      --node-hover-fill: #faf6ee;
+      --node-title-color: #3c2f1d;
+      --node-active-fill: #f0f7f4;
+      --node-active-success-fill: #e8f5e9;
+      --node-active-rework-fill: #fbe9e7;
+      --node-title-active-color: #3c2f1d;
+      --flow-line-stroke: #6b583f; /* Brighter high contrast warm bronze line */
+      --feedback-line-stroke: rgba(185, 28, 28, 0.65); /* Solid warm red */
+      --support-line-stroke: rgba(180, 83, 9, 0.15);
+      --orchestrator-line-stroke: rgba(180, 83, 9, 0.3);
+      --btn-clear-bg: #d4cbb9; /* Much darker beige/brown for clear contrast */
+      --btn-clear-border: #b8ab97;
+      --btn-clear-text: #2d2417;
+      --header-bg: linear-gradient(135deg, rgba(253, 251, 247, 0.9) 0%, rgba(245, 240, 230, 0.9) 100%);
+      --header-title-color: linear-gradient(to right, #3c2f1d 30%, var(--color-yellow) 100%);
+      --tab-btn-bg: rgba(240, 234, 222, 0.6);
+      --panel-header-bg: rgba(250, 247, 240, 0.7);
+      --console-bg: #faf6ef;
+      --console-header-bg: #e6dfd3;
+      --console-text: #3c2f1d;
+      --json-bg: #f5f1e8;
+      --json-text: #b45309;
+      --math-bg: #f5f1e8;
+      --math-text: #3c2f1d;
+      --input-bg: #ffffff;
+      
+      --controls-bg: rgba(230, 223, 211, 0.55);
+      --controls-text: var(--text-primary);
+      --fs-controls-bg: rgba(253, 251, 247, 0.95);
+      --fs-controls-text: var(--text-primary);
+      --color-active-link: #d97706;
+      --color-rework-link: #b91c1c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-cyan);
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background: var(--header-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px 30px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .header-logo-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--color-cyan) 0%, var(--color-purple) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #000;
+      font-size: 20px;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+    }
+
+    .header-text h1 {
+      font-size: 22px;
+      font-weight: 700;
+      background: var(--header-title-color);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      background: var(--tab-btn-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      border-color: rgba(0, 242, 254, 0.5);
+      background: rgba(30, 41, 75, 0.6);
+    }
+
+    .tab-btn.active {
+      color: #000;
+      background: var(--color-cyan);
+      border-color: var(--color-cyan);
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+    }
+
+    /* Main Content */
+    .tab-content {
+      display: none;
+      flex: 1;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid Layout for Tab 1 (Simulator) */
+    .simulator-layout {
+      display: grid;
+      grid-template-columns: 1.6fr 1.1fr;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .panel-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--panel-header-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: var(--color-cyan);
+      border-radius: 2px;
+    }
+
+    .panel-body {
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* SVG Visualizer */
+    .svg-container {
+      background: var(--svg-bg-color, #050811);
+      border: 1px solid #141b2e;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      height: 480px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+    }
+
+    #workflow-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* SVG Styling */
+    .svg-bg {
+      fill: var(--svg-bg-color, #050811);
+      transition: fill 0.2s ease;
+    }
+
+    .stage-boundary {
+      fill: var(--stage-boundary-fill);
+      stroke: var(--stage-boundary-stroke);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+      rx: 10;
+      transition: all 0.3s;
+    }
+
+    .stage-boundary:hover {
+      stroke: rgba(0, 242, 254, 0.2);
+      fill: var(--stage-boundary-fill);
+    }
+
+    .stage-label {
+      fill: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+    }
+
+    /* Node Styling */
+    .node {
+      cursor: pointer;
+    }
+
+    .node-rect {
+      fill: var(--node-rect-fill, #10182f);
+      stroke: var(--node-rect-stroke, #2a3c6e);
+      stroke-width: 2;
+      rx: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+    }
+
+    .node:hover .node-rect {
+      stroke: var(--color-cyan);
+      fill: var(--node-hover-fill, #172445);
+      filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.4));
+    }
+
+    .node-title {
+      fill: var(--node-title-color);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .node-sub {
+      fill: var(--text-muted);
+      font-size: 9px;
+      font-weight: 500;
+    }
+
+    /* Active states for nodes */
+    .node.active .node-rect {
+      stroke: var(--color-cyan);
+      fill: var(--node-active-fill, #112d3c);
+      stroke-width: 2.5;
+      filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.6));
+    }
+
+    .node.active-success .node-rect {
+      stroke: var(--color-neon-green);
+      fill: var(--node-active-success-fill, #0f2d1d);
+      stroke-width: 2.5;
+      filter: drop-shadow(0 0 15px rgba(57, 255, 20, 0.6));
+    }
+
+    .node.active-rework .node-rect {
+      stroke: var(--color-neon-red);
+      fill: var(--node-active-rework-fill, #2f131b);
+      stroke-width: 2.5;
+      filter: drop-shadow(0 0 15px rgba(255, 51, 102, 0.6));
+    }
+
+    /* High-contrast Highlight Modes */
+    .node.mode-highlight .node-rect {
+      stroke: var(--color-cyan);
+      stroke-width: 2.5;
+      fill: var(--node-active-fill, #12284b);
+      filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.65));
+    }
+
+    .node.mode-highlight-rework .node-rect {
+      stroke: var(--color-neon-red);
+      stroke-width: 2.5;
+      fill: var(--node-active-rework-fill, #341620);
+      filter: drop-shadow(0 0 12px rgba(255, 51, 102, 0.65));
+    }
+
+    .node.active .node-title, .node.active-success .node-title, .node.active-rework .node-title,
+    .node.mode-highlight .node-title, .node.mode-highlight-rework .node-title {
+      fill: var(--node-title-active-color, #fff);
+    }
+
+    /* Connection Lines */
+    .flow-line {
+      fill: none;
+      stroke: var(--flow-line-stroke, #25345d);
+      stroke-width: 3;
+      transition: all 0.3s;
+    }
+
+    .flow-line.active {
+      stroke: var(--color-active-link, var(--color-cyan));
+      stroke-width: 4.5;
+      stroke-dasharray: 8 4;
+      animation: dash 12s linear infinite;
+      filter: drop-shadow(0 0 4px var(--color-active-link, rgba(0, 242, 254, 0.5)));
+      marker-end: url(#arrow-active) !important;
+    }
+
+    .flow-line.active-rework {
+      stroke: var(--color-rework-link, var(--color-neon-red));
+      stroke-width: 4.5;
+      stroke-dasharray: 8 4;
+      animation: dash-reverse 8s linear infinite;
+      filter: drop-shadow(0 0 4px var(--color-rework-link, rgba(255, 51, 102, 0.5)));
+      marker-end: url(#arrow-rework) !important;
+    }
+
+    .flow-line.mode-highlight {
+      stroke: var(--color-active-link, var(--color-cyan));
+      stroke-width: 4.5;
+      filter: drop-shadow(0 0 5px var(--color-active-link, rgba(0, 242, 254, 0.6)));
+      marker-end: url(#arrow-active) !important;
+    }
+
+    .flow-line.mode-highlight-rework {
+      stroke: var(--color-rework-link, var(--color-neon-red));
+      stroke-width: 4.5;
+      filter: drop-shadow(0 0 5px var(--color-rework-link, rgba(255, 51, 102, 0.6)));
+      marker-end: url(#arrow-rework) !important;
+    }
+
+    .feedback-line {
+      fill: none;
+      stroke: var(--feedback-line-stroke, rgba(244, 63, 94, 0.35));
+      stroke-width: 2.2;
+      stroke-dasharray: 4 4;
+      transition: all 0.3s;
+    }
+
+    .feedback-line.active-rework {
+      stroke: var(--color-rework-link, var(--color-neon-red));
+      stroke-width: 4.5;
+      stroke-dasharray: 8 4;
+      animation: dash-reverse 12s linear infinite;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 5px var(--color-rework-link, rgba(255, 51, 102, 0.6)));
+      marker-end: url(#arrow-rework) !important;
+    }
+
+    .feedback-line.mode-highlight-rework {
+      stroke: var(--color-rework-link, var(--color-neon-red));
+      stroke-width: 4.5;
+      stroke-dasharray: 8 4;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 5px var(--color-rework-link, rgba(255, 51, 102, 0.6)));
+      marker-end: url(#arrow-rework) !important;
+    }
+
+    .control-support-line {
+      fill: none;
+      stroke: var(--support-line-stroke, rgba(59, 130, 246, 0.15));
+      stroke-width: 1.2;
+      stroke-dasharray: 2 4;
+      transition: all 0.3s;
+      opacity: 0.2;
+    }
+
+    .control-support-line[id^="ctrl-orchestrator-"] {
+      stroke: var(--orchestrator-line-stroke, rgba(59, 130, 246, 0.28));
+    }
+
+    .control-support-line.active {
+      stroke: var(--support-line-stroke, rgba(59, 130, 246, 0.22));
+      stroke-width: 1.2;
+      stroke-dasharray: 3 3;
+      animation: dash 35s linear infinite;
+      opacity: 1;
+    }
+
+    .control-support-line[id^="ctrl-orchestrator-"].active {
+      stroke: var(--orchestrator-line-stroke, rgba(59, 130, 246, 0.38));
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -1000;
+      }
+    }
+
+    @keyframes dash-reverse {
+      to {
+        stroke-dashoffset: 1000;
+      }
+    }
+
+    /* Simulator Controls */
+    .controls-card {
+      background: var(--controls-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 15px;
+      color: var(--controls-text);
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    select, input[type="range"] {
+      background: var(--input-bg, #0f172a);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 6px;
+      outline: none;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--border-color-active);
+    }
+
+    .btn {
+      background: var(--color-blue);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-play { background: var(--color-green); }
+    .btn-stop { background: var(--color-red); }
+    .btn-pause { background: var(--color-yellow); color: #000; }
+
+    /* Console Panel */
+    .console-card {
+      background: var(--console-bg, #030712);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 200px;
+      overflow: hidden;
+    }
+
+    .console-header {
+      background: var(--console-header-bg, #090d16);
+      padding: 8px 15px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .console-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .console-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    .console-title {
+      font-family: 'Fira Code', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .console-body {
+      padding: 12px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--console-bg, #030712);
+    }
+
+    .console-line {
+      display: flex;
+      gap: 10px;
+      animation: consoleTyping 0.3s ease;
+    }
+
+    @keyframes consoleTyping {
+      from { opacity: 0; transform: translateX(-5px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .console-time {
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .console-tag {
+      flex-shrink: 0;
+      font-weight: 600;
+      padding: 0 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+
+    .tag-info { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .tag-success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .tag-warning { background: rgba(234, 179, 8, 0.2); color: #facc15; }
+    .tag-rework { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+
+    .console-msg {
+      color: var(--console-text, #e2e8f0);
+      word-break: break-all;
+    }
+
+    /* Right Side: Active Inspector */
+    .inspector-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow-y: auto;
+    }
+
+    .inspector-section {
+      border-bottom: 1px solid rgba(30, 41, 75, 0.5);
+      padding-bottom: 15px;
+    }
+
+    .inspector-section:last-child {
+      border: none;
+      padding: 0;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .inspector-agent-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .inspector-agent-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: rgba(0, 242, 254, 0.15);
+      border: 1px solid var(--color-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .inspector-agent-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .inspector-agent-role {
+      font-size: 11px;
+      color: var(--color-cyan);
+      background: rgba(0, 242, 254, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 2px;
+      display: inline-block;
+    }
+
+    .desc-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* JSON display */
+    .json-block {
+      background: var(--json-bg, #040711);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Fira Code', monospace;
+      font-size: 11.5px;
+      color: var(--json-text, #38bdf8);
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .json-key { color: #f43f5e; }
+    .json-string { color: #4ade80; }
+    .json-number { color: #fb923c; }
+    .json-boolean { color: #c084fc; }
+
+    /* Tab 2 Layout: Matrix */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .agent-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0, 242, 254, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 242, 254, 0.1);
+    }
+
+    .agent-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .agent-card-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(30, 41, 75, 0.6);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--color-cyan);
+    }
+
+    .agent-card:hover .agent-card-icon {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: var(--color-cyan);
+    }
+
+    .agent-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .agent-card-role {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .agent-card-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .agent-card-io {
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(30, 41, 75, 0.5);
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .io-tag {
+      background: rgba(30, 41, 75, 0.5);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Modal for Agent Detail */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(3, 5, 12, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: modalFadeIn 0.2s ease;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalSlideUp {
+      from { transform: scale(0.9) translateY(30px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      background: rgba(30, 41, 75, 0.5);
+      border: none;
+      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+      background: var(--color-red);
+    }
+
+    .modal-body {
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .modal-grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .detail-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .detail-card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-cyan);
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 6px;
+    }
+
+    .detail-list {
+      list-style-type: none;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .detail-list li {
+      margin-bottom: 8px;
+      padding-left: 15px;
+      position: relative;
+    }
+
+    .detail-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--color-cyan);
+    }
+
+    .rule-item {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .rule-num {
+      color: var(--color-purple);
+      font-weight: 600;
+      margin-right: 5px;
+    }
+
+    .math-block {
+      background: var(--math-bg, #040711);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      color: var(--math-text, #e2e8f0);
+      text-align: center;
+      margin-top: 5px;
+      overflow-x: auto;
+    }
+
+    /* Tab 3 Layout: Data Objects */
+    .objects-container {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .object-list-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 700px;
+      overflow-y: auto;
+    }
+
+    .object-list-item {
+      padding: 12px 15px;
+      background: rgba(30, 41, 75, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .object-list-item:hover {
+      background: rgba(30, 41, 75, 0.4);
+      color: var(--text-primary);
+    }
+
+    .object-list-item.active {
+      background: rgba(0, 242, 254, 0.1);
+      border-color: var(--color-cyan);
+      color: var(--color-cyan);
+      font-weight: 600;
+    }
+
+    .object-detail-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Tab 4 Layout: Knowledge & Equations */
+    .knowledge-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+    }
+
+    .kb-equation-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 25px;
+    }
+
+    .kb-equation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(30, 41, 75, 0.5);
+      padding-bottom: 12px;
+      margin-bottom: 15px;
+    }
+
+    .kb-equation-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .kb-equation-tag {
+      background: rgba(192, 132, 252, 0.15);
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      color: var(--color-purple);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+
+    /* Controls helper styling */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-checkbox {
+      width: 36px;
+      height: 18px;
+      background: #1e294b;
+      border-radius: 9px;
+      position: relative;
+      transition: background 0.3s;
+    }
+
+    .toggle-checkbox::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      top: 2px;
+      left: 2px;
+      transition: left 0.3s;
+    }
+
+    input[type="checkbox"]:checked + .toggle-checkbox {
+      background: var(--color-cyan);
+    }
+
+    input[type="checkbox"]:checked + .toggle-checkbox::before {
+      left: 20px;
+    }
+
+    .checkbox-hidden {
+      display: none;
+    }
+
+    /* Fullscreen Mode Styling */
+    .panel.fullscreen-mode {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 95;
+      background: var(--bg-dark);
+      border-radius: 0;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0;
+    }
+
+    .panel.fullscreen-mode .panel-header {
+      display: none; /* Hide standard header in fullscreen, we use the custom controls bar */
+    }
+
+    .panel.fullscreen-mode .svg-container {
+      height: calc(100vh - 70px) !important;
+      border-radius: 0;
+      border: none;
+      flex: 1;
+    }
+
+    .panel.fullscreen-mode .fullscreen-controls {
+      display: flex !important;
+    }
+
+    .fullscreen-btn {
+      background: var(--btn-clear-bg);
+      border: 1px solid var(--btn-clear-border);
+      color: var(--btn-clear-text);
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .fullscreen-btn:hover {
+      border-color: var(--color-cyan);
+      background: var(--border-color);
+      color: var(--text-primary);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    }
+
+    .btn-clear {
+      background: var(--btn-clear-bg) !important;
+      border: 1px solid var(--btn-clear-border) !important;
+      color: var(--btn-clear-text) !important;
+    }
+
+    .btn-clear:hover {
+      background: var(--border-color) !important;
+      border-color: var(--color-cyan) !important;
+      color: var(--text-primary) !important;
+    }
+
+    .fullscreen-controls {
+      background: var(--fs-controls-bg, rgba(13, 19, 38, 0.95));
+      color: var(--fs-controls-text, #fff);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 25px;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      z-index: 99;
+    }
+
+    /* Themed link mode buttons */
+    .btn-link-seq {
+      background: rgba(59, 130, 246, 0.2) !important;
+      border: 1px solid rgba(59, 130, 246, 0.4) !important;
+      color: #93c5fd !important;
+    }
+    body.theme-light .btn-link-seq {
+      background: rgba(37, 99, 235, 0.1) !important;
+      border: 1px solid rgba(37, 99, 235, 0.3) !important;
+      color: #1d4ed8 !important;
+    }
+    body.theme-warm .btn-link-seq {
+      background: rgba(37, 99, 235, 0.08) !important;
+      border: 1px solid rgba(37, 99, 235, 0.3) !important;
+      color: #1e3a8a !important;
+    }
+
+    .btn-link-par {
+      background: rgba(192, 132, 252, 0.2) !important;
+      border: 1px solid rgba(192, 132, 252, 0.4) !important;
+      color: #e9d5ff !important;
+    }
+    body.theme-light .btn-link-par {
+      background: rgba(124, 58, 237, 0.1) !important;
+      border: 1px solid rgba(124, 58, 237, 0.3) !important;
+      color: #6d28d9 !important;
+    }
+    body.theme-warm .btn-link-par {
+      background: rgba(124, 58, 237, 0.08) !important;
+      border: 1px solid rgba(124, 58, 237, 0.3) !important;
+      color: #581c87 !important;
+    }
+
+    .btn-link-feed {
+      background: rgba(244, 63, 94, 0.2) !important;
+      border: 1px solid rgba(244, 63, 94, 0.4) !important;
+      color: #fecdd3 !important;
+    }
+    body.theme-light .btn-link-feed {
+      background: rgba(220, 38, 38, 0.1) !important;
+      border: 1px solid rgba(220, 38, 38, 0.3) !important;
+      color: #b91c1c !important;
+    }
+    body.theme-warm .btn-link-feed {
+      background: rgba(185, 28, 28, 0.08) !important;
+      border: 1px solid rgba(185, 28, 28, 0.3) !important;
+      color: #7f1d1d !important;
+    }
+
+    .btn-link-human {
+      background: rgba(245, 158, 11, 0.2) !important;
+      border: 1px solid rgba(245, 158, 11, 0.4) !important;
+      color: #fef3c7 !important;
+    }
+    body.theme-light .btn-link-human {
+      background: rgba(217, 119, 6, 0.1) !important;
+      border: 1px solid rgba(217, 119, 6, 0.3) !important;
+      color: #b45309 !important;
+    }
+    body.theme-warm .btn-link-human {
+      background: rgba(180, 83, 9, 0.08) !important;
+      border: 1px solid rgba(180, 83, 9, 0.3) !important;
+      color: #78350f !important;
+    }
+  </style>
+</head>
+<body class="theme-warm">
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-logo-title">
+        <div class="logo-icon">MT</div>
+        <div class="header-text">
+          <h1>大地电磁 (MT) 多 Agent 闭狂正演工作流平台</h1>
+          <p>基于物理约束、多保真融合与闭环反馈的下一代智能数值正演调度框架</p>
+        </div>
+      </div>
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-simulator')">💻 交互工作流</button>
+        <button class="tab-btn" onclick="switchTab('tab-agents')">🤖 Agent 责任矩阵</button>
+        <button class="tab-btn" onclick="switchTab('tab-objects')">📦 核心数据对象</button>
+        <button class="tab-btn" onclick="switchTab('tab-knowledge')">📖 物理与规则库</button>
+      </div>
+    </header>
+
+    <!-- Tab 1: Simulator -->
+    <div id="tab-simulator" class="tab-content active">
+      <div class="simulator-layout">
+        <!-- Left Side -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Controls -->
+          <!-- Controls -->
+          <div class="controls-card">
+            <div class="control-group">
+              <span class="control-label">选择计算场景:</span>
+              <select id="scenario-select" onchange="loadScenario()">
+                <option value="regular">常规流程：三阶段顺序正演与多保真融合</option>
+                <option value="ai_fallback">异常流 1：AI 检测出离分布 (OOD) 触发高保真回退</option>
+                <option value="qc_mesh_rework">异常流 2：高频误差超标触发网格自适应加密返工</option>
+                <option value="expert_rework">人机协同：专家否决二维近似触发三维建模计算</option>
+              </select>
+            </div>
+            
+            <div class="control-group" style="margin-left: auto;">
+              <button class="btn btn-play" id="btn-run" onclick="startSimulation()">▶ 开始</button>
+              <button class="btn btn-pause" id="btn-pause" onclick="pauseSimulation()" style="display:none;">⏸ 暂停</button>
+              <button class="btn btn-stop" id="btn-stop" onclick="stopSimulation()" disabled>⏹ 重置</button>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">步长间隔:</span>
+              <input type="range" id="speed-slider" min="500" max="4000" step="500" value="500" onchange="updateSpeed()">
+              <span class="control-label" id="speed-val">0.5s</span>
+            </div>
+
+            <div class="control-group" style="margin-left: 10px; border-left: 1px solid var(--border-color); padding-left: 15px;">
+              <span class="control-label">背景模式:</span>
+              <select id="theme-select" onchange="changeTheme()">
+                <option value="warm" selected>🍵 暖色模式</option>
+                <option value="dark">🌙 深色模式</option>
+                <option value="light">☀️ 浅色模式</option>
+              </select>
+            </div>
+
+            <label class="toggle-container" style="margin-left: auto;">
+              <input type="checkbox" class="checkbox-hidden" id="toggle-support-links" checked onchange="toggleSupportLines()">
+              <div class="toggle-checkbox"></div>
+              <span class="control-label" style="font-size:12px;">显示控制与支撑链路</span>
+            </label>
+          </div>
+
+          <!-- Interaction Link Modes -->
+          <div class="controls-card" style="margin-top: -15px;">
+            <div class="control-group">
+              <span class="control-label" style="font-weight: 600; color: inherit;">架构交互链路模式切换:</span>
+            </div>
+            <div class="control-group" style="gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-link-seq" style="font-size: 12px; padding: 6px 12px;" onclick="highlightInteractionMode('sequential')">🔗 顺序交互链路</button>
+              <button class="btn btn-link-par" style="font-size: 12px; padding: 6px 12px;" onclick="highlightInteractionMode('parallel')">⚡ 并行交互链路</button>
+              <button class="btn btn-link-feed" style="font-size: 12px; padding: 6px 12px;" onclick="highlightInteractionMode('feedback')">🔄 反馈交互链路</button>
+              <button class="btn btn-link-human" style="font-size: 12px; padding: 6px 12px;" onclick="highlightInteractionMode('human')">👨‍🔬 人机交互链路</button>
+              <button class="btn btn-clear" style="font-size: 12px; padding: 6px 12px;" onclick="highlightInteractionMode('clear')">🧹 清除高亮</button>
+            </div>
+          </div>
+
+          <!-- SVG Visualizer -->
+          <div class="panel" id="visualizer-panel">
+            <div class="panel-header">
+              <div class="panel-title">正演工作流架构交互图 (点击节点可查看详情)</div>
+              <div style="display:flex; gap:12px; align-items:center;">
+                <span style="font-size:12px; color:var(--text-muted);">一核、两支撑、三阶段、双闭环</span>
+                <button class="fullscreen-btn" onclick="toggleFullscreenMode()">
+                  <span>🔍</span> 全屏放大
+                </button>
+              </div>
+            </div>
+
+            <!-- Fullscreen Controls Overlay (Shown in fullscreen mode) -->
+            <div class="fullscreen-controls" id="fullscreen-ctrl-bar" style="display: none;">
+              <div class="control-group">
+                <span class="control-label" style="font-weight: 600; color: inherit;">计算场景:</span>
+                <select id="fullscreen-scenario-select" onchange="loadFullscreenScenario()">
+                  <option value="regular">常规流程：三阶段顺序正演与多保真融合</option>
+                  <option value="ai_fallback">异常流 1：AI 检测出离分布 (OOD) 触发高保真回退</option>
+                  <option value="qc_mesh_rework">异常流 2：高频误差超标触发网格自适应加密返工</option>
+                  <option value="expert_rework">人机协同：专家否决二维近似触发三维建模计算</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <button class="btn btn-play" id="fs-btn-run" onclick="startSimulation()">▶ 开始</button>
+                <button class="btn btn-pause" id="fs-btn-pause" onclick="pauseSimulation()" style="display:none;">⏸ 暂停</button>
+                <button class="btn btn-stop" id="fs-btn-stop" onclick="stopSimulation()" disabled>⏹ 重置</button>
+              </div>
+              <div class="control-group" style="margin-left: 10px; border-left: 1px solid var(--border-color); padding-left: 15px;">
+                <span class="control-label" style="font-weight: 600; color: inherit;">链路高亮:</span>
+                <button class="btn btn-link-seq" style="font-size: 11px; padding: 4px 8px;" onclick="highlightInteractionMode('sequential')">顺序</button>
+                <button class="btn btn-link-par" style="font-size: 11px; padding: 4px 8px;" onclick="highlightInteractionMode('parallel')">并行</button>
+                <button class="btn btn-link-feed" style="font-size: 11px; padding: 4px 8px;" onclick="highlightInteractionMode('feedback')">反馈</button>
+                <button class="btn btn-link-human" style="font-size: 11px; padding: 4px 8px;" onclick="highlightInteractionMode('human')">人机</button>
+                <button class="btn btn-clear" style="font-size: 11px; padding: 4px 8px;" onclick="highlightInteractionMode('clear')">清除</button>
+              </div>
+              <div class="control-group" style="margin-left: 10px; border-left: 1px solid var(--border-color); padding-left: 15px;">
+                <span class="control-label" style="font-weight: 600; color: inherit;">背景模式:</span>
+                <select id="fs-theme-select" onchange="changeFsTheme()">
+                  <option value="warm" selected>🍵 暖色模式</option>
+                  <option value="dark">🌙 深色模式</option>
+                  <option value="light">☀️ 浅色模式</option>
+                </select>
+              </div>
+              <button class="btn" style="margin-left: auto; background: var(--color-red);" onclick="toggleFullscreenMode()">
+                ❌ 退出全屏
+              </button>
+            </div>
+
+            <div class="svg-container">
+              <svg id="workflow-svg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(30, 41, 75, 0.15)" stroke-width="1"/>
+                  </pattern>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="27" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--flow-line-stroke, #25345d)" />
+                  </marker>
+                  <marker id="arrow-active" viewBox="0 0 10 10" refX="27" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-active-link, #00f2fe)" />
+                  </marker>
+                  <marker id="arrow-rework" viewBox="0 0 10 10" refX="27" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-rework-link, #ff3366)" />
+                  </marker>
+                </defs>
+
+                <!-- Grid Background -->
+                <rect width="100%" height="100%" fill="url(#grid)" class="svg-bg" />
+
+                <!-- Stage Boundaries -->
+                <!-- Stage 1 -->
+                <rect x="25" y="150" width="950" height="110" class="stage-boundary" />
+                <text x="35" y="170" class="stage-label">阶段一：任务标准化与计算规划 (PLANNING STAGE)</text>
+                
+                <!-- Stage 2 -->
+                <rect x="150" y="300" width="700" height="110" class="stage-boundary" />
+                <text x="160" y="320" class="stage-label">阶段二：高效率正演计算核心 (COMPUTATION STAGE)</text>
+
+                <!-- Stage 3 -->
+                <rect x="150" y="450" width="825" height="110" class="stage-boundary" />
+                <text x="160" y="470" class="stage-label">阶段三：质量评估、不确定性量化与人机交付 (VALIDATION &amp; DELIVERY)</text>
+
+                <!-- Support link definitions (Dotted Background Links) -->
+                <!-- Orchestrator Commands -->
+                <g id="support-links-group" style="display:block;">
+                  <line x1="500" y1="70" x2="125" y2="220" class="control-support-line" id="ctrl-orchestrator-input_task"/>
+                  <line x1="500" y1="70" x2="375" y2="220" class="control-support-line" id="ctrl-orchestrator-model_diagnosis"/>
+                  <line x1="500" y1="70" x2="625" y2="220" class="control-support-line" id="ctrl-orchestrator-mesh_domain"/>
+                  <line x1="500" y1="70" x2="875" y2="220" class="control-support-line" id="ctrl-orchestrator-solver_strategy"/>
+                  <line x1="500" y1="70" x2="250" y2="370" class="control-support-line" id="ctrl-orchestrator-ai_surrogate"/>
+                  <line x1="500" y1="70" x2="500" y2="370" class="control-support-line" id="ctrl-orchestrator-traditional_hf"/>
+                  <line x1="500" y1="70" x2="750" y2="370" class="control-support-line" id="ctrl-orchestrator-multi_fidelity_fusion"/>
+                  <line x1="500" y1="70" x2="250" y2="520" class="control-support-line" id="ctrl-orchestrator-verification_qc"/>
+                  <line x1="500" y1="70" x2="500" y2="520" class="control-support-line" id="ctrl-orchestrator-uncertainty_sensitivity"/>
+                  <line x1="500" y1="70" x2="710" y2="520" class="control-support-line" id="ctrl-orchestrator-expert_review"/>
+                  <line x1="500" y1="70" x2="900" y2="520" class="control-support-line" id="ctrl-orchestrator-output_delivery"/>
+
+                  <!-- Physics KB Supports -->
+                  <line x1="200" y1="70" x2="125" y2="220" class="control-support-line" id="ctrl-physics_kb-input_task" />
+                  <line x1="200" y1="70" x2="375" y2="220" class="control-support-line" id="ctrl-physics_kb-model_diagnosis" />
+                  <line x1="200" y1="70" x2="625" y2="220" class="control-support-line" id="ctrl-physics_kb-mesh_domain" />
+                  <line x1="200" y1="70" x2="875" y2="220" class="control-support-line" id="ctrl-physics_kb-solver_strategy" />
+                  <line x1="200" y1="70" x2="250" y2="370" class="control-support-line" id="ctrl-physics_kb-ai_surrogate" />
+                  <line x1="200" y1="70" x2="500" y2="370" class="control-support-line" id="ctrl-physics_kb-traditional_hf" />
+                  <line x1="200" y1="70" x2="250" y2="520" class="control-support-line" id="ctrl-physics_kb-verification_qc" />
+                </g>
+
+                <!-- Flow Paths -->
+                <!-- Input -> Diagnosis -->
+                <path id="path-input_task-model_diagnosis" d="M 125 220 L 375 220" class="flow-line" marker-end="url(#arrow)" />
+                <!-- Diagnosis -> Mesh -->
+                <path id="path-model_diagnosis-mesh_domain" d="M 375 220 L 625 220" class="flow-line" marker-end="url(#arrow)" />
+                <!-- Mesh -> Solver -->
+                <path id="path-mesh_domain-solver_strategy" d="M 625 220 L 875 220" class="flow-line" marker-end="url(#arrow)" />
+                <!-- Solver -> AI -->
+                <path id="path-solver_strategy-ai_surrogate" d="M 875 220 C 875 290, 250 280, 250 370" class="flow-line" marker-end="url(#arrow)" />
+                <!-- Solver -> Traditional -->
+                <path id="path-solver_strategy-traditional_hf" d="M 875 220 C 875 290, 500 290, 500 370" class="flow-line" marker-end="url(#arrow)" />
+                <!-- AI -> Fusion -->
+                <path id="path-ai_surrogate-multi_fidelity_fusion" d="M 250 370 L 750 370" class="flow-line" marker-end="url(#arrow)" />
+                <!-- Traditional -> Fusion -->
+                <path id="path-traditional_hf-multi_fidelity_fusion" d="M 500 370 L 750 370" class="flow-line" marker-end="url(#arrow)" />
+                <!-- Fusion -> QC -->
+                <path id="path-multi_fidelity_fusion-verification_qc" d="M 750 370 C 750 440, 250 430, 250 520" class="flow-line" marker-end="url(#arrow)" />
+                <!-- QC -> UQ -->
+                <path id="path-verification_qc-uncertainty_sensitivity" d="M 250 520 L 480 520" class="flow-line" marker-end="url(#arrow)" />
+                <!-- UQ -> Expert -->
+                <path id="path-uncertainty_sensitivity-expert_review" d="M 480 520 L 710 520" class="flow-line" marker-end="url(#arrow)" />
+                <!-- Expert -> Output -->
+                <path id="path-expert_review-output_delivery" d="M 710 520 L 900 520" class="flow-line" marker-end="url(#arrow)" />
+
+                <!-- Feedback Rework Paths -->
+                <!-- QC -> Mesh (Rework) -->
+                <path id="path-verification_qc-mesh_domain" d="M 250 520 C 120 400, 420 300, 625 220" class="feedback-line" marker-end="url(#arrow)" />
+                <!-- QC -> Solver (Rework) -->
+                <path id="path-verification_qc-solver_strategy" d="M 250 520 C 60 380, 550 140, 875 220" class="feedback-line" marker-end="url(#arrow)" />
+                <!-- QC -> AI -->
+                <path id="path-verification_qc-ai_surrogate" d="M 250 520 L 250 370" class="feedback-line" marker-end="url(#arrow)" />
+                <!-- QC -> Traditional -->
+                <path id="path-verification_qc-traditional_hf" d="M 250 520 C 250 470, 500 470, 500 370" class="feedback-line" marker-end="url(#arrow)" />
+                <!-- QC -> Fusion -->
+                <path id="path-verification_qc-multi_fidelity_fusion" d="M 250 520 C 250 480, 750 480, 750 370" class="feedback-line" marker-end="url(#arrow)" />
+
+                <!-- Expert -> Orchestrator (Rework) -->
+                <path id="path-expert_review-orchestrator" d="M 710 520 C 820 350, 650 150, 500 70" class="feedback-line" marker-end="url(#arrow)" />
+                <!-- Expert -> Physics KB -->
+                <path id="path-expert_review-physics_kb" d="M 710 520 C 950 350, 400 20, 200 70" class="feedback-line" marker-end="url(#arrow)" />
+
+                <!-- Nodes -->
+                <!-- Orchestrator (One Core) -->
+                <g class="node" id="node-orchestrator" transform="translate(500, 70)" onclick="selectAgent('orchestrator')">
+                  <rect x="-85" y="-26" width="170" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">总控调度核心</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Orchestrator Agent</text>
+                </g>
+
+                <!-- Physics KB (Support Left) -->
+                <g class="node" id="node-physics_kb" transform="translate(200, 70)" onclick="selectAgent('physics_kb')">
+                  <rect x="-85" y="-26" width="170" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">物理与知识库</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Physics KB Agent</text>
+                </g>
+
+                <!-- Log Governance (Support Right) -->
+                <g class="node" id="node-log_governance" transform="translate(800, 70)" onclick="selectAgent('log_governance')">
+                  <rect x="-85" y="-26" width="170" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">日志、版本与治理</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Log &amp; Governance Agent</text>
+                </g>
+
+                <!-- Stage 1 Nodes -->
+                <g class="node" id="node-input_task" transform="translate(125, 220)" onclick="selectAgent('input_task')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">输入与任务定义</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Input &amp; Task</text>
+                </g>
+                <g class="node" id="node-model_diagnosis" transform="translate(375, 220)" onclick="selectAgent('model_diagnosis')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">模型诊断 Agent</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Model Diagnosis</text>
+                </g>
+                <g class="node" id="node-mesh_domain" transform="translate(625, 220)" onclick="selectAgent('mesh_domain')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">计算域与网格</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Mesh &amp; Domain</text>
+                </g>
+                <g class="node" id="node-solver_strategy" transform="translate(875, 220)" onclick="selectAgent('solver_strategy')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">求解策略 Agent</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Solver Strategy</text>
+                </g>
+
+                <!-- Stage 2 Nodes -->
+                <g class="node" id="node-ai_surrogate" transform="translate(250, 370)" onclick="selectAgent('ai_surrogate')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">AI 代理模型 Agent</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">AI Surrogate</text>
+                </g>
+                <g class="node" id="node-traditional_hf" transform="translate(500, 370)" onclick="selectAgent('traditional_hf')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">传统高保真正演</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">High-Fidelity Solver</text>
+                </g>
+                <g class="node" id="node-multi_fidelity_fusion" transform="translate(750, 370)" onclick="selectAgent('multi_fidelity_fusion')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">多保真融合与校正</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Multi-Fidelity Fusion</text>
+                </g>
+
+                <!-- Stage 3 Nodes -->
+                <g class="node" id="node-verification_qc" transform="translate(250, 520)" onclick="selectAgent('verification_qc')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">验证与质量控制</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Verification &amp; QC</text>
+                </g>
+                <g class="node" id="node-uncertainty_sensitivity" transform="translate(480, 520)" onclick="selectAgent('uncertainty_sensitivity')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">不确定性与敏感性</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">UQ &amp; Sensitivity</text>
+                </g>
+                <g class="node" id="node-expert_review" transform="translate(710, 520)" onclick="selectAgent('expert_review')">
+                  <rect x="-80" y="-26" width="160" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">专家审阅 Agent</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Expert Review (Loop)</text>
+                </g>
+                <g class="node" id="node-output_delivery" transform="translate(900, 520)" onclick="selectAgent('output_delivery')">
+                  <rect x="-60" y="-26" width="120" height="52" rx="8" class="node-rect" />
+                  <text class="node-title" x="0" y="-4" text-anchor="middle">输出与交付</text>
+                  <text class="node-sub" x="0" y="16" text-anchor="middle">Output &amp; Delivery</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Console log -->
+          <div class="console-card">
+            <div class="console-header">
+              <div class="console-dots">
+                <span class="console-dot dot-red"></span>
+                <span class="console-dot dot-yellow"></span>
+                <span class="console-dot dot-green"></span>
+              </div>
+              <div class="console-title">orchestrator_console_output.log</div>
+              <button onclick="clearConsole()" style="background:none; border:none; color:var(--text-muted); font-size:10px; cursor:pointer; font-family:inherit;">[清空]</button>
+            </div>
+            <div class="console-body" id="console-logs">
+              <div class="console-line">
+                <span class="console-time">[18:07:33]</span>
+                <span class="console-tag tag-info">system</span>
+                <span class="console-msg">工作流平台加载成功。选择计算场景并点击“开始”按钮模拟运行。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Agent/Data Object detail inspector -->
+        <div class="inspector-card" id="inspector-panel">
+          <div class="inspector-section">
+            <div class="section-title">当前激活阶段</div>
+            <div id="inspector-stage-name" style="font-size: 14px; font-weight: 600; color: #fff;">等待工作流启动...</div>
+          </div>
+          <div class="inspector-section">
+            <div class="section-title">活跃 Agent 信息</div>
+            <div id="active-agent-box">
+              <div style="color:var(--text-secondary); font-size: 13px;">工作流未启动。点击交互图中的任何 Agent 节点可在此查看其设计说明及参数接口。</div>
+            </div>
+          </div>
+          <div class="inspector-section" style="flex:1; display:flex; flex-direction:column;">
+            <div class="section-title">信道流转数据 (Structured IO Object)</div>
+            <div id="active-data-box" style="flex:1; display:flex; flex-direction:column;">
+              <div style="color:var(--text-secondary); font-size: 13px; margin-bottom: 8px;">在此展示当前数据流中的结构化消息协议。</div>
+              <div class="json-block" style="flex:1; min-height: 120px;" id="json-display">暂无数据交互</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Agents Matrix -->
+    <div id="tab-agents" class="tab-content">
+      <div class="matrix-grid" id="agents-grid">
+        <!-- Javascript renders 14 agent cards here -->
+      </div>
+    </div>
+
+    <!-- Tab 3: Data Objects -->
+    <div id="tab-objects" class="tab-content">
+      <div class="objects-container">
+        <!-- Sidebar -->
+        <div class="object-list-card" id="objects-list">
+          <!-- Javascript renders objects list -->
+        </div>
+        <!-- Detail view -->
+        <div class="object-detail-panel" id="object-detail">
+          <h2 style="color:var(--text-primary);" id="obj-detail-name">请在左侧选择数据对象</h2>
+          <p class="desc-text" id="obj-detail-desc" style="font-size: 14px;">在多 Agent 系统中，各个节点基于严格的协议传递结构化对象以实现无遗漏的反馈闭环，避免传统自由对话的不确定性。</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;" id="obj-detail-io-meta">
+            <!-- Generator & Receivers -->
+          </div>
+          <div>
+            <div class="section-title">结构化模式 schema / 示样</div>
+            <div class="json-block" id="obj-detail-json">点击左侧列表查看详细 JSON 模式</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Knowledge Base -->
+    <div id="tab-knowledge" class="tab-content">
+      <div class="knowledge-grid" id="kb-grid">
+        <!-- Render 4 key rule areas -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      大地电磁法 (MT) 多 Agent 闭环正演工作流平台 • 2026 基于 Python / Word 文档补充资料构建
+    </footer>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="agent-modal" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 style="color:var(--text-primary);" id="modal-agent-name">Agent 详细规格说明</h2>
+        <button class="modal-close" onclick="hideModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body-content">
+        <!-- Render detailed info -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Javascript Logic -->
+  <script>
+    // 14 Agents Data Definition
+    const agentsData = {
+      orchestrator: {
+        id: "orchestrator",
+        emoji: "👑",
+        name: "总控调度核心",
+        en: "Orchestrator / Master Agent",
+        role: "核心调度与状态机",
+        desc: "整个 MT 智能正演工作流的指挥官与项目经理。不负责具体的数值物理计算，专门负责任务分解、状态追踪、子 Agent 调度以及返工决策与终止判断。",
+        inputs: [
+          { from: "用户/外部系统", info: "物理任务定义、初始模型文件、频点列表、接收测点、精度指标与硬件资源限制。" },
+          { from: "输入与任务定义 Agent", info: "标准化后的 TaskSpec 结构化文件。" },
+          { from: "各执行 Agent (网格、求解器、QC等)", info: "报告、配置文件、误差质量报告、不确定性结果或人机交互决策结论。" }
+        ],
+        outputs: [
+          { to: "子 Agent 们", info: "下达启动指令、下发依赖配置文件、传递返工参数、强行终止或最终交付指令。" },
+          { to: "日志治理 Agent", info: "全流程计算树、状态切换记录、各模块异常日志。" }
+        ],
+        modules: [
+          "任务解析器：解析自然语言或结构化计算参数。",
+          "全局状态管理器：维护包含网格、模型、AI状态和运行结果的版本树。",
+          "自适应路由策略机：基于当前状态 $s_t$ 推演下一步最佳动作 $a_t$。",
+          "异常处理与返工调度器：接收 QC 与专家的失败报告，判断该向哪一步发起返工。"
+        ],
+        math: "a_t = \\pi_{ctrl}(s_t)",
+        mathDesc: "总控 Agent 的路由策略函数。根据全局状态 $s_t$（包括当前误差、是否 OOD 等）输出下一步动作 $a_t$。动作集 $\\mathcal{A} = \\{\\text{diagnose, mesh, route_solver, run_surrogate, run_numerical, qc, uq, review, deliver}\\}$。",
+        rules: [
+          "TaskSpec 存在关键字段缺陷时禁止启动，强制打回输入 Agent 补全。",
+          "模型诊断报告 (ModelDiagnosisReport) 为高风险时，必须激活传统数值验证或专家复核。",
+          "AI OOD 指标超限时，总控必须启动 traditional_hf 进行全频点或验证频点回退，不得直接采用 AI 结果。"
+        ]
+      },
+      physics_kb: {
+        id: "physics_kb",
+        emoji: "📖",
+        name: "物理与知识库 Agent",
+        en: "Physics & Knowledge Base Agent",
+        role: "物理物理方程与先验经验中心",
+        desc: "提供 MT 正演计算所需的各种物理方程、边界条件、数值离散精度约束以及 AI 模型的物理损失公式。它是系统物理一致性的守护者，防止黑箱产生违背物理规律的结论。",
+        inputs: [
+          { from: "总控调度核心", info: "针对特定几何维度与正演模式（TE/TM）的控制方程查询。" },
+          { from: "QC / 专家 Agent", info: "因边界反射或 PDE 残差偏大导致的失败案例，提示需要更新或修正经验规则。" }
+        ],
+        outputs: [
+          { to: "输入/诊断/网格/求解器/AI/QC Agent", info: "KnowledgeRuleSet（包含控制方程、离散要求、PML参数、AI适用阈值、PDE损失函数、QC容限等）。" }
+        ],
+        modules: [
+          "物理方程库：二维 TM/TE、三维频率域 Maxwell 控制方程组。",
+          "网格与边界知识库：趋肤深度经验公式、PML/吸收边界条件尺寸规则。",
+          "数值方法映射库：电阻率对比度、地形起伏与 FEM/FDM/FVM 求解器适配性经验法则。",
+          "AI 物理正则构建器：为 PINN 等模型自动生成 PDE 散度与物理边界损失公式。"
+        ],
+        math: "\\frac{\\partial}{\\partial y}\\left(\\rho \\frac{\\partial H_x}{\\partial y}\\right) + \\frac{\\partial}{\\partial z}\\left(\\rho \\frac{\\partial H_x}{\\partial z}\right) + i\\omega\\mu H_x = 0",
+        mathDesc: "以二维 TM 模式为例，物理与知识库提供 Maxwell 离散所遵循的磁场控制偏微分方程，并为 AI Surrogate 确定边界物理惩罚损失以及 QC 的 PDE 残差计算准则。",
+        rules: [
+          "任何 AI 或数值计算方案的边界条件必须服从知识库定义的趋肤深度 $k\\delta$ 扩展法则。",
+          "当 AI 模型预测响应与数值先验物理规则冲突时，强制将 AI 路由权重归零，回退至数值方法。"
+        ]
+      },
+      log_governance: {
+        id: "log_governance",
+        emoji: "🗄️",
+        name: "日志、版本与治理 Agent",
+        en: "Log, Version & Governance Agent",
+        role: "可复现性与数据链审计中心",
+        desc: "负责记录正演过程中的每一个状态、输入文件哈希值、网格结构哈希、求解器参数 yaml、AI 模型的 checkpoint 版本以及误差报告。确保所有计算过程具有 100% 的可追溯性与可复现性。",
+        inputs: [
+          { from: "所有运行 Agent", info: "执行中产生的临时输入输出文件哈希、硬件消耗、迭代耗时、AI 随机种子等。" },
+          { from: "专家审阅 Agent", info: "人工审阅的批准/退回结论以及地质解释的修改依据。" }
+        ],
+        outputs: [
+          { to: "总控 / 输出与交付 Agent", info: "可复现审计链 (ReproducibilityList)，用以生成最终交付的元数据包。" }
+        ],
+        modules: [
+          "版本控制器：追踪模型、网格以及求解方案的代码与数据版本。",
+          "审计追踪器：记录工作流中的跳转路径，特别是历次返工的理由和变化值。",
+          "实验档案管理器：归档成功算例，便于反演内循环中相似模型的直接检索与复用。"
+        ],
+        math: "\\text{RunLog} = \\{\\text{TaskID}, \\text{ModelHash}, \\text{MeshHash}, \\text{SolverConfig}, \\text{AI_ckpt}, \\text{QCResult}, \\text{UQReport}\\}",
+        mathDesc: "工作流元数据哈希元组。每个算例的 RunLog 必须被签名并归档，保证任何地球物理学者都可以凭借该元组一键重现完全一致的正演曲线。",
+        rules: [
+          "返工重建时绝对禁止覆盖原有版本，必须增加版本后缀（如 v01 -> v02_refined）并归档旧版本失败日志。",
+          "如果交付报告中没有包含可复现实验哈希链，则拒绝交付 Agent 的打包请求。"
+        ]
+      },
+      input_task: {
+        id: "input_task",
+        emoji: "📥",
+        name: "输入与任务定义 Agent",
+        en: "Input & Task Definition Agent",
+        role: "任务标准化与参数校验",
+        desc: "处理零散的用户电阻率模型、频率表、接收点和自然语言要求，将其转换成标准化的 `TaskSpec` 物理结构数据。同时进行物理单位统一与缺失项检测。",
+        inputs: [
+          { from: "用户/外部系统", info: "多种格式的模型文件（npy, json, msh）、频率配置、坐标表以及需求文字。" },
+          { from: "物理与知识库 Agent", info: "标准物理单位及未定义参数的行业经验默认值。" }
+        ],
+        outputs: [
+          { to: "总控 / 模型诊断 / 日志 Agent", info: "标准 TaskSpec 数据结构（物理量、接收点配置、精度约束和硬件参数）。" }
+        ],
+        modules: [
+          "文件解析器：读取各类电阻率模型文件并校验坐标是否对齐。",
+          "单位归一化器：统一长度为 m，频率为 Hz，电阻率为 $\\Omega\\cdot m$。",
+          "参数校验器：排查坐标缺失、测点位于地下等物理逻辑错误。"
+        ],
+        math: "TaskSpec \\, T = \\{\\mathbf{m}, \\Omega_r, \\mathbf{R}, \\epsilon_{tol}, \\mathcal{C}\\}",
+        mathDesc: "标准化任务描述元组。包括电阻率分布 $\\mathbf{m}$、计算频率区间 $\\Omega_r$、测点位置 $\\mathbf{R}$、误差限 $\\epsilon_{tol}$ 以及计算时间/算力限制 $\\mathcal{C}$。",
+        rules: [
+          "检测到测线横跨复杂地形而缺少高程参数时，标记“地形异常”，挂起流程并通知总控。",
+          "自动合并重复频点，若最小-最大频段范围逻辑颠倒，自动进行修正和警告记录。"
+        ]
+      },
+      model_diagnosis: {
+        id: "model_diagnosis",
+        emoji: "🔍",
+        name: "模型诊断 Agent",
+        en: "Model Diagnosis Agent",
+        role: "计算难度评估与AI可行性分析",
+        desc: "评估电阻率模型的维度（一/二/三维）、电阻率的最高最低对比度、几何复杂度（是否含强地形或薄层起伏），计算频率下的趋肤深度范围，判断 AI 模型在当前样本分布外的风险。",
+        inputs: [
+          { from: "输入与任务定义 Agent", info: "TaskSpec 中指定的模型几何及物理物性分布参数。" },
+          { from: "物理与知识库 Agent", info: "关于趋肤深度与模型难度的分级标准。" }
+        ],
+        outputs: [
+          { to: "网格 / 求解策略 / AI / UQ / QC / 总控 Agent", info: "ModelDiagnosisReport（难度等级、对比度、地形指数、AI适用性得分）。" }
+        ],
+        modules: [
+          "维度诊断器：分析物性在水平与深度方向的梯度，判断 1D/2D/3D 特征。",
+          "趋肤深度计算器：结合高低频与最大最小电阻率，预估场衰减距离。",
+          "AI 泛化可行性评估器：比对当前模型特征与 AI 已训练特征库的分布距离。"
+        ],
+        math: "\\delta_{max} \\approx 503 \\sqrt{\\rho_{max} T_{max}}, \\quad C_\\rho = \\frac{\\rho_{max}}{\\rho_{min}}",
+        mathDesc: "依据最大趋肤深度 $\\delta$ 确定计算域边界范围，由电阻率对比度 $C_\\rho$ 预测系统病态程度。若 $C_\\rho > 10^4$，则该模型易产生数值病态，对网格加密和求解器预条件有很高要求。",
+        rules: [
+          "如果模型维度为 3D 且电阻率对比度超过 $10^4$，AI 适用性评分必须设为“极低”，强制走传统 3D 有限元数值路径。",
+          "高频趋肤深度小于 $10\\text{m}$ 时，自动在诊断报告中写入“浅地表高频网格加密建议”。"
+        ]
+      },
+      mesh_domain: {
+        id: "mesh_domain",
+        emoji: "🕸️",
+        name: "计算域与网格 Agent",
+        en: "Domain & Mesh Agent",
+        role: "空间自适应网格剖分",
+        desc: "根据诊断出的最大趋肤深度设计横向及深部边界大小，以避免边界反射对测点产生干扰。选择结构化、非结构化或混合网格，在测点、界面及物性突变处自动进行网格加密。",
+        inputs: [
+          { from: "模型诊断 Agent", info: "ModelDiagnosisReport 提供的趋肤深度限制与模型几何复杂度评分。" },
+          { from: "QC Agent", info: "返工指令中的局部误差坐标点，用于自适应网格细化。" }
+        ],
+        outputs: [
+          { to: "求解策略 / 传统正演 / AI / QC Agent", info: "MeshPlan 以及生成的网格节点、单元文件。" }
+        ],
+        modules: [
+          "计算域边界计算器：确定边界横向扩展与底界深度以消除人工边界效应。",
+          "混合网格剖分器：复杂地形采用非结构三角形/四面体剖分，内部平坦区使用长方形/六面体。",
+          "自适应加密引擎：在测点周围与电阻率异常梯度带自动加密网格单元。"
+        ],
+        math: "L_x \\ge L_{survey} + 2k_x \\delta_{max}, \\quad h(x,\\omega) \\le \\alpha \\delta(x,\\omega)",
+        mathDesc: "计算域长度 $L_x$ 的边界外延计算（保证大于 $k_x$ 倍最大趋肤深度），以及网格最大步长 $h$ 不得超过趋肤深度 $\\delta$ 的 $\\alpha$ 倍的剖分约束公式（通常 $\\alpha \\le 0.3$）。",
+        rules: [
+          "低频趋肤深度较长，网格底界必须保证足够深度（一般 3-5 倍最大趋肤深度）。",
+          "QC 返回由于局部场量不连续导致的错误时，必须读取异常点坐标，并在该处局部加密一倍，输出 MeshPlan 新版本。"
+        ]
+      },
+      solver_strategy: {
+        id: "solver_strategy",
+        emoji: "🧠",
+        name: "求解策略 Agent",
+        en: "Solver Strategy Agent",
+        role: "多目标求解器路由与决策",
+        desc: "正演路线的选择中心。基于计算耗时、精度要求及算力，决策采用纯数值（FEM/FDM/FVM）、纯 AI Surrogate，还是多保真混合路线（AI 预测 + 10% 高保真抽检校正）。配置线性求解器、预条件器与失败回退方案。",
+        inputs: [
+          { from: "ModelDiagnosisReport &amp; MeshPlan", info: "物性对比度、网格单元数以及系统维度。" },
+          { from: "TaskSpec &amp; 物理知识库", info: "硬件约束（核数、内存）与误差容限指标。" }
+        ],
+        outputs: [
+          { to: "AI / 传统高保正演 / 多保真融合 / QC / 总控 Agent", info: "SolverPlan（求解器设置、抽样验证比例、并行方案与回退阈值）。" }
+        ],
+        modules: [
+          "决策开销估算器：预估不同求解路线的内存与 CPU/GPU 时间。",
+          "求解器路由中心：生成最佳正演方案。一维层状模型直通解析递推，三维强起伏模型采用 FEM 直接法或 AMG 预条件迭代法。",
+          "验证策略配置器：确定高保真验证点的分布及抽样比例（如 5% 测点/频点）。"
+        ],
+        math: "J(\\pi) = \\lambda_1 T(\\pi) + \\lambda_2 M(\\pi) + \\lambda_3 E_{num}(\pi) + \\lambda_4 E_{phys}(\\pi) + \\lambda_5 R_{fail}(\\pi)",
+        mathDesc: "求解路由选择的目标函数。权衡运算时间 $T$、内存开销 $M$、数值离散误差 $E_{num}$、AI 物理残差 $E_{phys}$ 以及求解不收敛风险 $R_{fail}$，以选择代价最低的计算路径 $\\pi$。",
+        rules: [
+          "如果分配的计算核数 $< 4$ 且频率数量 $> 50$，AI 适用度高时优先采用多保真融合路线以节约资源。",
+          "AI 计算发生失败或 OOD 时，SolverPlan 必须立即激活回退方案，切换为传统有限元数值计算路线。"
+        ]
+      },
+      ai_surrogate: {
+        id: "ai_surrogate",
+        emoji: "⚡",
+        name: "AI 代理模型 Agent",
+        en: "AI Surrogate Model Agent",
+        role: "超快速正演近似预测与OOD检测",
+        desc: "使用预训练的深度神经网络（如 FNO 神经算子、U-Net、PINN 等）在亚秒级内近似计算整个模型的 MT 阻抗与响应曲线。提供物理残差和用于防止“黑箱翻车”的 Out-of-Distribution (OOD) 分布外检测。",
+        inputs: [
+          { from: "SolverPlan &amp; TaskSpec", info: "模型物性参数、所选的 AI 模型结构、计算频率表。" },
+          { from: "物理与知识库 Agent", info: "用于残差检验的 PDE 微分约束算子。" }
+        ],
+        outputs: [
+          { to: "多保真融合 / QC / UQ / 总控 Agent", info: "AIForwardResult（视电阻率、相位响应、PDE 残差、OOD 马氏距离）。" }
+        ],
+        modules: [
+          "算子推演引擎：调用预训练好的算子网络（如 FNO）快速正向外推。",
+          "OOD 分布检测器：计算当前输入模型与神经网络训练集分布特征的距离。",
+          "物理一致性评估器：在物理采样点上计算 Maxwell 方程的 PDE 残差。"
+        ],
+        math: "\\mathcal{L}_{joint} = \\mathcal{L}_{data} + \\lambda_{PDE}\\mathcal{L}_{PDE} + \\lambda_{BC}\\mathcal{L}_{BC}",
+        mathDesc: "训练神经网络时采用的数据-物理联合损失。该 Agent 推理时亦可输出 $\\mathcal{L}_{PDE}$（PDE偏微分方程残差）和马氏距离 $D_{OOD}$，以量化 AI 预测的物理可信度。",
+        rules: [
+          "若 $D_{OOD} > 3.0$（马氏距离超出训练集均值三个标准差），自动拒绝 AI 输出，并向总控触发“AI 失效，回退传统数值正演”警报。",
+          "AI 的预测曲线必须同时附带 Ensemble 方差或不确定性估计带，禁止给出单一确定性的无误差线。"
+        ]
+      },
+      traditional_hf: {
+        id: "traditional_hf",
+        emoji: "🔢",
+        name: "传统高保真正演 Agent",
+        en: "Traditional High-Fidelity Agent",
+        role: "高精度数值计算基准",
+        desc: "使用有限元 (FEM)、有限差分 (FDM) 或积分方程法，求解频率域 Maxwell 控制方程。通过求解大型线性复稀疏矩阵提供精确的电磁场响应，作为最终可信结果或 AI 预测的标定基准。",
+        inputs: [
+          { from: "MeshPlan &amp; SolverPlan", info: "网格节点/单元拓扑结构、求解器收敛阈值、线性求解器与并行参数配置。" },
+          { from: "TaskSpec", info: "计算模型、频率点分布及边界边界形式。" }
+        ],
+        outputs: [
+          { to: "多保真融合 / QC / UQ / 输出 Agent", info: "HFForwardResult（阻抗张量、电磁场量、线性系统残差、CPU 耗时）。" }
+        ],
+        modules: [
+          "数值离散与刚度装配引擎：将 Maxwell PDE 离散为复稀疏方程组 $\\mathbf{A}\\mathbf{u}=\\mathbf{b}$ 并组装刚度矩阵。",
+          "线性系统求解器：调用直接解法（Pardiso）或迭代解法（BiCGSTAB + AMG 预条件）。",
+          "场量后处理计算器：从计算的电磁场量（E、H）中派生计算出视电阻率和阻抗相位。"
+        ],
+        math: "r_{lin} = \\frac{\\|\\mathbf{A}\\mathbf{u} - \\mathbf{b}\\|_2}{\\|\\mathbf{b}\\|_2} < \\epsilon_{lin}",
+        mathDesc: "线性代数求解的相对收敛残差控制。只有当残差 $r_{lin}$ 低于给定的误差容限时（例如 $\\epsilon_{lin} = 10^{-7}$），才认为场求解收敛且数值结果有效。",
+        rules: [
+          "如果迭代求解器运行超过 $1000$ 次仍未降到 $\\epsilon_{lin}$ 以下，抛出“求解器不收敛”异常，报告总控以更换直接法求解器或精细化网格。",
+          "多频点计算时，自动根据 CPU 物理核心数对频率点进行并行分配，以缩短计算周期。"
+        ]
+      },
+      multi_fidelity_fusion: {
+        id: "multi_fidelity_fusion",
+        emoji: "🎛️",
+        name: "多保真融合与偏差校正 Agent",
+        en: "Multi-Fidelity Fusion Agent",
+        role: "兼顾速度与精度的响应融合",
+        desc: "多保真计算的桥梁。利用少量高保真传统正演结果，对全频点超快速的 AI 预测值进行系统性偏差校正，既继承了 AI 的计算高效率，又获得了高保真数值的物理准确性。",
+        inputs: [
+          { from: "AIForwardResult", info: "全频点、多测点的快速视电阻率和相位预测值。" },
+          { from: "HFForwardResult", info: "抽样频点/测点（如 10% 频点）的高精度数值计算结果。" }
+        ],
+        outputs: [
+          { to: "QC / UQ / 输出 / 总控 Agent", info: "FusionResult（校正后的视电阻率/相位、残差估计模型、权重比例）。" }
+        ],
+        modules: [
+          "采样差值校正器：对比重合频点上的 AI 预测与 FEM 基准值，评估局部系统偏差。",
+          "多保真残差网络/GP模型：使用高斯过程或残差神经网络预测未计算频点的 AI 偏差趋势。",
+          "动态权重分配器：根据 AI 不确定性方差，自适应调整 AI 修正值与 FEM 的合并权重。"
+        ],
+        math: "d_{fusion} = w_{AI}(d_{AI} + g_\\eta(\\mathbf{m})) + w_{HF}d_{HF}, \\quad w_{AI}+w_{HF}=1",
+        mathDesc: "融合计算公式。其中 $g_\\eta$ 为拟合偏差的校正模型，$w$ 为权重。在数值采样频点上，$w_{HF}=1$ 直接取高保真值；在非采样频点上根据 AI 表现动态权衡。",
+        rules: [
+          "若抽样比对发现 AI 预测在多个频点相对误差平均超过 $15\\%$，提示偏差规律不稳定，应向总控请求“追加高保真样本进行重新校正”或放弃 AI 路径。"
+        ]
+      },
+      verification_qc: {
+        id: "verification_qc",
+        emoji: "🚨",
+        name: "验证与质量控制 Agent",
+        en: "Verification & QC Agent",
+        role: "严谨的闭环质控闸门",
+        desc: "计算最终输出曲线的相对误差、PDE 微分残差、边界反射强度、线性求解器收敛程度以及物理学对称性约束。若指标超限，则输出定位报告，并明确提出返工建议。",
+        inputs: [
+          { from: "AI / Traditional / Fusion Result", info: "正演阻抗、视电阻率、相位响应曲线。" },
+          { from: "物理与知识库 Agent", info: "行业验收允许的物理误差上限及判定规则。" }
+        ],
+        outputs: [
+          { to: "总控 Agent", info: "QualityReport（包括 PASS/FAIL 标志、误差摘要）。" },
+          { to: "网格/求解器/AI/融合 Agent (若失败)", info: "具体失败类型定位和对应的重算参数调整要求。" }
+        ],
+        modules: [
+          "相对误差计算器：计算视电阻率相对百分比误差与相位绝对度数误差。",
+          "物理一致性核验器：检查边界处场强连续性，检验阻抗张量是否违背物理对易性质。",
+          "智能报错定位器：当 QC 不通过时，将误差源溯源定位是“网格过粗”、“求解器病态”还是“AI 失效”。"
+        ],
+        math: "E_{total} = \\max(e_Z, e_{\\rho_a}, e_\\phi, e_{PDE}, e_{lin}) \\le \\epsilon",
+        mathDesc: "总误差判定准则。综合阻抗误差 $e_Z$、电阻率相对误差 $e_{\\rho_a}$、相位误差 $e_\\phi$ 和 PDE 微分残差等，只有当最大误差低于精度限 $\\epsilon$ 时方可通过质控。",
+        rules: [
+          "质控不通过时绝对禁止进入输出步骤。总控必须根据失败报告实施闭环反馈（例如高频误差大反馈给网格，收敛慢反馈给求解策略）。",
+          "连续 3 次同一原因返工失败时，必须向总控发出“降级或请求专家介入”的中断信号。"
+        ]
+      },
+      uncertainty_sensitivity: {
+        id: "uncertainty_sensitivity",
+        emoji: "📊",
+        name: "不确定性与敏感性 Agent",
+        en: "UQ & Sensitivity Agent",
+        role: "不确定性量化与敏感性评估",
+        desc: "量化正演响应的误差分布。利用 Monte Carlo 扰动、Ensemble 模型或多网格对比，计算正演视电阻率与相位的 95% 置信区间，并计算响应对电阻率参数的敏感度排名，用以指导后期反演解释。",
+        inputs: [
+          { from: "验证与质量控制 Agent", info: "通过 QC 筛选的合格响应结果与统计误差。" },
+          { from: "TaskSpec &amp; 物理规则库", info: "模型物性参量的物理波动区间及灵敏度定义。" }
+        ],
+        outputs: [
+          { to: "专家审阅 / 输出与交付 / 总控 Agent", info: "UQReport（95%置信区间、敏感性分布图、高风险频带标记）。" }
+        ],
+        modules: [
+          "不确定性量化器：基于 Monte Carlo 或 Dropout 推理，获取正演响应的统计分布带。",
+          "局部/全局敏感性分析仪：计算不同深度与大小的地下异常体扰动对测点观测阻抗的影响梯度。",
+          "频段风险评级机：识别因场衰减、背景噪声及方法离散产生的不确定性高的频段。"
+        ],
+        math: "\\text{CI}_{95\\%} = \\bar{d} \\pm 1.96\\sigma_d, \\quad \\tilde{S}_i = \\frac{m_i}{d} \\frac{\\partial d}{\\partial m_i}",
+        mathDesc: "正演响应的 95% 置信区间估计（基于方差 $\\sigma_d$）与归一化局部敏感度公式（反映模型物性参数 $\\mathbf{m}$ 扰动对阻抗响应 $d$ 的影响敏感度）。",
+        rules: [
+          "对于地质地形剧烈起伏的区域，必须计算地形不确定性敏感度，并写入最终交付报告。",
+          "若深部目标异常体频段的正演灵敏度低于 $0.05$（意味着场信息极弱），应在报告中特意发出“解释风险”预警。"
+        ]
+      },
+      expert_review: {
+        id: "expert_review",
+        emoji: "👨‍🔬",
+        name: "专家审阅 Agent",
+        en: "Expert Review Agent",
+        role: "人机协同 (Human-in-the-Loop) 验证",
+        desc: "为高风险工程提供人机交互接口。地球物理专家在线复核模型维度的简化合理性（如三维构造是否可简化为二维）、阻抗响应是否存在非物理跳变、置信区间是否合理并审阅交付报告草稿。",
+        inputs: [
+          { from: "QC &amp; UQ Agent", info: "质量控制报告、不确定性误差统计与关键频段敏感性。" },
+          { from: "日志治理 Agent", info: "网格剖分说明、求解方案以及 AI 模型运行的版本证据。" }
+        ],
+        outputs: [
+          { to: "总控 Agent", info: "ReviewDecision（通过、条件通过、重新计算、修改报告、禁用 AI 等决策）。" },
+          { to: "物理与知识库 Agent", info: "专家根据工程实践总结并写入的新规则与禁用参数。" }
+        ],
+        modules: [
+          "专家交互面板：渲染阻抗、视电阻率响应曲线、地电模型切片、不确定性包络带。",
+          "决策编辑器：支持专家给出带有详细文字理由的“通过/返工”结论。",
+          "经验规则更新模块：允许专家向物理与知识库中注入新修正条目（如“该工区AI泛化差，严禁启用”）。"
+        ],
+        math: "\\text{ReviewDecision} \\in \\{\\text{Accept}, \\text{ConditionalAccept}, \\text{Revise2D3D}, \\text{RerunHF}, \\text{DisableAI}, \\text{Reject}\\}",
+        mathDesc: "专家离散决策集合。它是人机协同闭环的最高权限，能推翻总控算法做出的自动选择，进行最底层的物理假设修改。",
+        rules: [
+          "凡是被标记为“高风险、深部地热与矿产勘查”的正演任务，在最终交付前必须强制通过专家审阅审查。",
+          "专家做出的任何退回结论都必须由日志 Agent 归档，并精确回溯到总控以触发特定流程修改。"
+        ]
+      },
+      output_delivery: {
+        id: "output_delivery",
+        emoji: "📦",
+        name: "输出与交付 Agent",
+        en: "Output & Delivery Agent",
+        role: "可复现性成果打包与分发",
+        desc: "正演流程的终点站。收集合格的电磁响应曲线、视电阻率与相位表、网格拓扑、不确定性量化报告、使用的 AI checkpoint、求解器配置文件及可复现元数据，打包为统一的最终交付成果包。",
+        inputs: [
+          { from: "QC &amp; UQ &amp; 专家审阅 Agent", info: "终审通过的计算数据、不确定性统计表及专家的解释建议文字。" },
+          { from: "日志治理 Agent", info: "完整的实验记录、运行配置以及可追溯的版本链。" }
+        ],
+        outputs: [
+          { to: "用户/外部系统", info: "DeliveryPackage（标准交付数据包，含曲线、网格、参数元数据及可重现清单）。" }
+        ],
+        modules: [
+          "结果制图仪：绘制阻抗张量、视电阻率、相位随频率和测点变化的曲线及剖面图。",
+          "交付打包引擎：根据行业格式（如 EDI、CSV 等）编写数值结果，并生成 metadata.json。",
+          "可复现发布器：将所有关联哈希及运行配置文件整理，形成实验复现清单。"
+        ],
+        math: "\\text{DeliveryPackage} = \\{\\text{ResponseCurves}, \\text{ErrorMaps}, \\text{UQReport}, \\text{MeshSummary}, \\text{SolverConfig}, \\text{AIUsage}, \\text{ReproducibilityList}\\}",
+        mathDesc: "最终交付成果包的数据结构。它不仅提供正演预测数值，更提供网格、求解器、AI 模型、误差与复现环境的所有证明材料，实现高信度地球物理计算。",
+        rules: [
+          "在交付元数据中，必须公开透明地注明 AI 参与程度（如“纯数值”、“AI预测及抽检校正”），严禁遮掩 AI 对原始物理的修饰作用。"
+        ]
+      }
+    };
+
+    // 12 Structured Data Objects
+    const dataObjectsData = {
+      TaskSpec: {
+        name: "TaskSpec (正演任务规范)",
+        generator: "输入与任务定义 Agent",
+        receivers: "总控调度、模型诊断、网格剖分、求解策略、日志治理",
+        desc: "描述需要计算的 MT 模型物理物性、频率表、接收测点、允许精度以及算力约束，将各种各样的用户原始输入标准化为一致的参数。",
+        schema: `{
+  "task_id": "TS_2026_0611_001",
+  "dimensions": "2D",
+  "resistivity_model": {
+    "file_path": "f:/learning/models/model_profile_A.npy",
+    "grid_shape": [120, 80],
+    "resistivity_units": "Ohm-m"
+  },
+  "frequencies": {
+    "min_hz": 0.001,
+    "max_hz": 1000.0,
+    "num_points": 40,
+    "spacing": "logarithmic"
+  },
+  "stations": {
+    "count": 51,
+    "x_coordinates": [0.0, 500.0, 1000.0, "...", 25000.0]
+  },
+  "precision_tolerance": 0.02,
+  "allow_ai_surrogate": true,
+  "compute_resources": {
+    "max_cores": 16,
+    "gpu_allow": true
+  }
+}`
+      },
+      KnowledgeRuleSet: {
+        name: "KnowledgeRuleSet (物理规则集)",
+        generator: "物理与知识库 Agent",
+        receivers: "输入、诊断、网格、求解策略、AI模型、传统正演、验证质控",
+        desc: "提供求解 MT 方程的边界边界计算法、趋肤深度估算经验、自适应网格尺度、数值算法收敛判据、AI 损失物理约束参数以及 QC 阈值。",
+        schema: `{
+  "rule_version": "MT_PHYSICS_V2026_02",
+  "governing_equations": {
+    "2D_TM": "d/dy (rho * dHx/dy) + d/dz (rho * dHx/dz) + i*omega*mu*Hx = 0",
+    "2D_TE": "d/dy (rho * dEx/dy) + d/dz (rho * dEx/dz) + i*omega*mu*Ex = 0"
+  },
+  "mesh_rules": {
+    "boundary_factor_kz": 4.0,
+    "grid_spacing_alpha": 0.25
+  },
+  "ai_physics_constraints": {
+    "pde_loss_weight": 0.1,
+    "boundary_loss_weight": 0.2
+  },
+  "qc_tolerances": {
+    "max_relative_resistivity_error": 0.02,
+    "max_absolute_phase_error_deg": 0.5,
+    "pde_residual_limit": 1e-4
+  }
+}`
+      },
+      ModelDiagnosisReport: {
+        name: "ModelDiagnosisReport (模型诊断报告)",
+        generator: "模型诊断 Agent",
+        receivers: "网格剖分、求解策略、AI模型、传统正演、不确定性分析、验证质控、总控调度",
+        desc: "分析模型的几何复杂度、物性强对比度、计算趋肤深度范围以及 AI 模型特征匹配的 OOD 泛化等级，为后续网格及求解路径提供硬指标依据。",
+        schema: `{
+  "diagnosis_id": "MDR_2026_0611_01",
+  "dimensions": "2D",
+  "resistivity_stats": {
+    "min_rho": 0.1,
+    "max_rho": 1000.0,
+    "contrast_ratio": 10000.0
+  },
+  "geometry": {
+    "has_topography": true,
+    "topography_slope_max_deg": 18.5,
+    "complexity_rating": "Medium-High"
+  },
+  "skin_depth": {
+    "min_depth_m": 5.03,
+    "max_depth_m": 50300.0
+  },
+  "ai_applicability": {
+    "similarity_score": 0.85,
+    "ood_risk": "Low",
+    "recommend_ai": true
+  },
+  "overall_risk_level": "Medium"
+}`
+      },
+      MeshPlan: {
+        name: "MeshPlan (网格离散规划)",
+        generator: "计算域与网格 Agent",
+        receivers: "求解策略、传统高保正演、AI模型、验证质控、日志治理",
+        desc: "确定计算域在横向和深部的扩展尺寸，网格剖分形式（如三角剖分或多尺度矩形剖分），指明局部加密位置和边界扩展参数，附带剖分质量评分。",
+        schema: `{
+  "mesh_id": "MP_20260611_v1",
+  "mesh_type": "Adaptive_Triangular_FEM",
+  "domain_extent": {
+    "horizontal_km": 180.0,
+    "vertical_km": 150.0
+  },
+  "mesh_elements": {
+    "node_count": 45100,
+    "element_count": 89400,
+    "min_size_m": 5.0,
+    "max_size_m": 8000.0
+  },
+  "refinement_zones": [
+    {"type": "stations", "radius_m": 50.0, "size_m": 10.0},
+    {"type": "anomalies", "bounding_box": [5000, 10000, 200, 2000], "size_m": 25.0}
+  ],
+  "boundary_conditions": {
+    "type": "PML",
+    "layer_count": 10
+  },
+  "mesh_quality_score": 0.94
+}`
+      },
+      SolverPlan: {
+        name: "SolverPlan (求解策略规划)",
+        generator: "求解策略 Agent",
+        receivers: "AI模型、传统高保正演、多保真融合、验证质控、总控调度、日志治理",
+        desc: "规划正演计算的技术路线（纯数值、纯 AI 还是多保真），规定了主求解器类型、验证求解器、迭代预条件器、抽样校验频点和失败时的备用路径。",
+        schema: `{
+  "plan_id": "SP_20260611_01",
+  "selected_route": "Multi_Fidelity_Fusion",
+  "ai_config": {
+    "model_name": "FNO_MT_2D_v3",
+    "use_pde_refinement": true
+  },
+  "numerical_config": {
+    "solver_method": "FEM",
+    "linear_solver": "BiCGSTAB",
+    "preconditioner": "AMG",
+    "tolerance": 1e-7
+  },
+  "validation": {
+    "sampling_ratio": 0.10,
+    "sampling_strategy": "logarithmic_frequency_spacing",
+    "validation_frequencies_hz": [100.0, 1.0, 0.01, 0.001]
+  },
+  "fallback_options": {
+    "on_ai_failure": "switch_to_full_traditional_hf",
+    "on_solver_divergence": "switch_to_direct_mumps"
+  }
+}`
+      },
+      AIForwardResult: {
+        name: "AIForwardResult (AI 预测结果)",
+        generator: "AI 代理模型 Agent",
+        receivers: "多保真融合、验证质控、不确定性分析、总控调度、日志治理",
+        desc: "由神经网络推断推演出的全频点、全测点的视电阻率及阻抗相位。附带 OOD 马氏距离和神经网络输出的不确定性带。",
+        schema: `{
+  "result_id": "AFR_20260611_01",
+  "calculated_frequencies_hz": 40,
+  "data": {
+    "apparent_resistivity": "[[12.5, 12.8, ...], [15.2, 14.8, ...]]",
+    "phase_deg": "[[45.2, 44.8, ...], [52.1, 51.5, ...]]"
+  },
+  "physics_diagnostics": {
+    "pde_residuals_max": 1.25e-4,
+    "boundary_divergence": 3.4e-5
+  },
+  "generalization": {
+    "mahalanobis_distance_ood": 1.15,
+    "is_in_distribution": true
+  },
+  "inference_time_seconds": 0.15
+}`
+      },
+      HFForwardResult: {
+        name: "HFForwardResult (高保真数值结果)",
+        generator: "传统高保真正演 Agent",
+        receivers: "多保真融合、验证质控、不确定性分析、输出与交付、日志治理",
+        desc: "使用高精度数值方法（如有限元）计算出抽检验证频点上的绝对物理阻抗与响应，作为偏置校正的真实物理基准。",
+        schema: `{
+  "result_id": "HFR_20260611_01",
+  "calculated_frequencies_hz": 4,
+  "target_frequencies_hz": [100.0, 1.0, 0.01, 0.001],
+  "data": {
+    "impedance_tensor": "[[[real, imag], ...], ...]",
+    "apparent_resistivity": "[[12.42, ...], [15.08, ...]]",
+    "phase_deg": "[[45.31, ...], [51.98, ...]]"
+  },
+  "convergence_status": {
+    "iterations_count": 142,
+    "final_linear_residual": 8.5e-8,
+    "is_converged": true
+  },
+  "compute_time_seconds": 12.4
+}`
+      },
+      FusionResult: {
+        name: "FusionResult (多保真融合响应)",
+        generator: "多保真融合与偏差校正 Agent",
+        receivers: "验证质控、不确定性分析、输出与交付、总控调度、日志治理",
+        desc: "将 AI 预测的全频点曲线通过高斯过程或残差修正方法，使用高保真数值基准做偏差消除后，输出的综合响应结果。",
+        schema: `{
+  "fusion_id": "FR_20260611_01",
+  "fused_frequencies_hz": 40,
+  "data": {
+    "apparent_resistivity": "[[12.45, 12.78, ...], [15.10, 14.82, ...]]",
+    "phase_deg": "[[45.30, 44.82, ...], [52.01, 51.52, ...]]"
+  },
+  "fusion_meta": {
+    "correction_magnitude_avg": "0.85%",
+    "fusion_confidence_level": 0.985,
+    "residual_gp_model_variance": 0.002
+  }
+}`
+      },
+      QualityReport: {
+        name: "QualityReport (质量控制报告)",
+        generator: "验证与质量控制 Agent",
+        receivers: "总控调度、网格剖分、求解策略、AI模型、传统正演、多保真融合、日志治理",
+        desc: "对融合响应或数值响应进行相对误差、边界溢出和偏微分一致性审查后的质控报告。如果不合格，指出具体错误原因以便针对性返工。",
+        schema: `{
+  "qc_id": "QR_20260611_01",
+  "passed": true,
+  "errors": {
+    "resistivity_relative_error_avg": 0.0095,
+    "resistivity_relative_error_max": 0.0185,
+    "phase_absolute_error_deg_max": 0.35,
+    "pde_residual_max": 1.25e-4
+  },
+  "checks": {
+    "boundary_reflection_reflection_coeff": 1.2e-5,
+    "linear_convergence_check": "passed",
+    "physical_symmetry_check": "passed"
+  },
+  "rework_feedback": {
+    "requires_rework": false,
+    "rework_target": "none",
+    "reason": ""
+  }
+}`
+      },
+      UQReport: {
+        name: "UQReport (不确定性量化报告)",
+        generator: "不确定性与敏感性 Agent",
+        receivers: "专家审阅、输出与交付、总控调度、物理知识库、日志治理",
+        desc: "评估因参数扰动、网格粗糙和算法模型不一致产生的数据偏差，提供 95% 置信区间包络线，并评估参数的敏感度排序。",
+        schema: `{
+  "uq_id": "UQR_20260611_01",
+  "statistical_confidence_interval": 0.95,
+  "resistivity_uncertainty_range": "[[12.2, 12.7], [14.8, 15.4], ...]",
+  "sensitivity_rankings": [
+    {"parameter": "shallow_anomaly_resistivity", "normalized_sensitivity": 0.78},
+    {"parameter": "basement_resistivity", "normalized_sensitivity": 0.22},
+    {"parameter": "overburden_thickness", "normalized_sensitivity": 0.08}
+  ],
+  "risk_zones": {
+    "frequencies_hz": [0.01, 0.001],
+    "reason": "Skin depth reaches domain boundary; physical sensitivity is low."
+  }
+}`
+      },
+      ReviewDecision: {
+        name: "ReviewDecision (专家审阅结论)",
+        generator: "专家审阅 Agent",
+        receivers: "总控调度、物理知识库、输出与交付、验证质控、日志治理",
+        desc: "来自人类专家的最终审查签字，可决定接受结果、条件接受、或者提出维度近似存疑等人工返工指令。",
+        schema: `{
+  "review_id": "RD_20260611_01",
+  "decision": "Accept",
+  "expert_name": "Dr. Zhang (Geophysicist)",
+  "expert_comments": "The apparent resistivity curve matches geological expectation. 2D assumption is acceptable as profile strike is stable. FNO AI results are effectively calibrated by FEM points.",
+  "knowledge_base_update": {
+    "recommend_new_rules": false,
+    "rule_text": ""
+  },
+  "timestamp": "2026-06-11T18:15:30Z"
+}`
+      },
+      DeliveryPackage: {
+        name: "DeliveryPackage (最终交付包)",
+        generator: "输出与交付 Agent",
+        receivers: "最终用户、总控调度、日志治理",
+        desc: "由输出 Agent 打包的可直接归档与分发的标准数据包，包含所有计算图表、数值曲线、网格、不确定性文件以及全套复现环境和配置哈希。",
+        schema: `{
+  "package_id": "DP_MT_20260611_001",
+  "delivery_time": "2026-06-11T18:16:00Z",
+  "summary": {
+    "dimension": "2D",
+    "frequencies": 40,
+    "stations": 51,
+    "computing_method": "Multi-Fidelity Fusion (AI + 10% FEM)"
+  },
+  "data_files": [
+    {"name": "MT_apparent_resistivity_phase.csv", "format": "EDI-like CSV"},
+    {"name": "numerical_mesh.msh", "format": "Gmsh-v4"},
+    {"name": "uncertainty_quantification.json", "format": "JSON"}
+  ],
+  "audit_trail": {
+    "log_hash": "sha256-a4f89d3c...e890",
+    "reproducibility_token": "sha256-ff7d3e91...456f"
+  }
+}`
+      }
+    };
+
+    // Scenarios Setup for simulator
+    const scenarios = {
+      regular: [
+        { step: 1, agent: "orchestrator", type: "info", msg: "总控调度核心接收到 MT 正演计算任务，开始初始化状态机，验证 TaskSpec 是否就位。", flow: [] },
+        { step: 2, agent: "input_task", type: "info", msg: "输入 Agent 接收并统一原始电阻率模型与频率范围 (1000Hz - 0.001Hz) 单位为国际标准制，生成 TaskSpec 并写入日志。", flow: [["node-orchestrator", "node-input_task"]], data: "TaskSpec" },
+        { step: 3, agent: "model_diagnosis", type: "info", msg: "模型诊断 Agent 评估模型：确定维度为 2D，物性对比度 1000，最大趋肤深度 50.3km。计算难度为“低风险”，AI 模型适用度高 (0.85)。", flow: [["node-input_task", "node-model_diagnosis"]], data: "ModelDiagnosisReport" },
+        { step: 4, agent: "mesh_domain", type: "info", msg: "计算域与网格 Agent 根据趋肤深度扩展底界，生成自适应网格。在 51 个测点及浅部异常体突变面局部加密。输出 MeshPlan。", flow: [["node-model_diagnosis", "node-mesh_domain"]], data: "MeshPlan" },
+        { step: 5, agent: "solver_strategy", type: "info", msg: "求解策略 Agent 依据低风险和算力环境，路由至“多保真融合”路线：激活 FNO 代理模型进行全频点计算，并抽检 10% 频点由传统 FEM 校验。", flow: [["node-mesh_domain", "node-solver_strategy"]], data: "SolverPlan" },
+        { step: 6, agent: "ai_surrogate", type: "info", msg: "AI 代理模型 Agent 启动：通过 FNO 神经网络在 0.15s 内瞬时预测 40 个频点的响应，测得 PDE 微分残差 1.2e-4，马氏距离 1.15，属于分布内正常表现。", flow: [["node-solver_strategy", "node-ai_surrogate"]], data: "AIForwardResult" },
+        { step: 7, agent: "traditional_hf", type: "info", msg: "传统高保真正演 Agent 并行启动：利用有限元 (FEM) 求解器计算 4 个抽检验证频点的高精度响应，作为校正真实基准。残差达标收敛。", flow: [["node-solver_strategy", "node-traditional_hf"]], data: "HFForwardResult" },
+        { step: 8, agent: "multi_fidelity_fusion", type: "info", msg: "多保真融合与偏差校正 Agent 启动：基于抽检的数值真实基准建立高斯过程残差预测模型，对 40 个频点的 AI 预测曲线进行动态系统偏差补偿。", flow: [["node-ai_surrogate", "node-multi_fidelity_fusion"], ["node-traditional_hf", "node-multi_fidelity_fusion"]], data: "FusionResult" },
+        { step: 9, agent: "verification_qc", type: "success", msg: "验证与质量控制 Agent 对融合曲线进行审查：相对误差 0.95% < 2% 精度阈值，边界无数值反射，通过 QC，允许流向下游。", flow: [["node-multi_fidelity_fusion", "node-verification_qc"]], data: "QualityReport" },
+        { step: 10, agent: "uncertainty_sensitivity", type: "info", msg: "不确定性与敏感性 Agent 启动：扰动模型参数执行 Monte Carlo 评估，输出 95% 置信区间，并分析模型物性对响应的敏感度梯度排名。", flow: [["node-verification_qc", "node-uncertainty_sensitivity"]], data: "UQReport" },
+        { step: 11, agent: "expert_review", type: "success", msg: "专家审阅 Agent (人机协同)：地球物理学者在线复核曲线与置信区间，确认二维 Strike 近似合理，批准交付，ReviewDecision 为 Accept。", flow: [["node-uncertainty_sensitivity", "node-expert_review"]], data: "ReviewDecision" },
+        { step: 12, agent: "output_delivery", type: "success", msg: "输出与交付 Agent 汇总曲线数据、网格剖分、不确定性报告以及版本复现审计链，打包 DeliveryPackage 交付给用户。工作流圆满闭环！", flow: [["node-expert_review", "node-output_delivery"]], data: "DeliveryPackage" },
+        { step: 13, agent: "orchestrator", type: "success", msg: "【工作流结束】总控调度核心核验交付包，流程正常退出，全局状态重置归档。", flow: [] }
+      ],
+      ai_fallback: [
+        { step: 1, agent: "orchestrator", type: "info", msg: "总控调度核心启动异常计算，针对复杂起伏岩体工区初始化正演工作流。", flow: [] },
+        { step: 2, agent: "input_task", type: "info", msg: "输入 Agent 标准化 TaskSpec，标记模型几何极其扭曲且可能包含特殊地形。", flow: [["node-orchestrator", "node-input_task"]], data: "TaskSpec" },
+        { step: 3, agent: "model_diagnosis", type: "info", msg: "模型诊断 Agent 评估：由于高电阻率对比度且起伏地形极不规则，评估 AI 代理可能产生泛化失效危险，但用户配置强制尝试 AI，评分为 Low-Suitability。", flow: [["node-input_task", "node-model_diagnosis"]], data: "ModelDiagnosisReport" },
+        { step: 4, agent: "mesh_domain", type: "info", msg: "网格 Agent 启动，鉴于起伏地形强烈，设计了复杂的非结构化三角形网格，并局部地表加密。", flow: [["node-model_diagnosis", "node-mesh_domain"]], data: "MeshPlan" },
+        { step: 5, agent: "solver_strategy", type: "info", msg: "求解策略 Agent 决定先尝试 AI 快速求解路线，但必须启动严格的 OOD 分布外与 PDE 残差自检，并配置 traditional_hf 回退。", flow: [["node-mesh_domain", "node-solver_strategy"]], data: "SolverPlan" },
+        { step: 6, agent: "ai_surrogate", type: "warning", msg: "【自检报警】AI 代理模型 Agent 推理后发现马氏距离 D_OOD = 5.2 > 3.0，判定当前输入模型处于训练分布以外，AI 预测不可靠！向总控上报失败。", flow: [["node-solver_strategy", "node-ai_surrogate"]], data: "AIForwardResult" },
+        { step: 7, agent: "orchestrator", type: "rework", msg: "【异常控制】总控调度核心接收到 AI 离分布 OOD 警报，依据 SolverPlan 回退策略，强制关闭 AI 快速预测路径，下令切换传统高保真数值路线。", flow: [["node-ai_surrogate", "node-orchestrator"]], data: "ReviewDecision" },
+        { step: 8, agent: "solver_strategy", type: "info", msg: "求解策略 Agent 重新配置 SolverPlan v2，将主求解器切换为 2D 高保真有限元求解器 (FEM)，关闭多保真融合机制。", flow: [["node-orchestrator", "node-solver_strategy"]], data: "SolverPlan" },
+        { step: 9, agent: "traditional_hf", type: "info", msg: "传统高保真正演 Agent 启动，对全部 40 个频点进行有限元刚度刚度离散并装配复线性方程组，使用直接法解出高精度物理电磁场响应。", flow: [["node-solver_strategy", "node-traditional_hf"]], data: "HFForwardResult" },
+        { step: 10, agent: "verification_qc", type: "success", msg: "验证与质量控制 Agent 审核纯数值正演曲线，边界反射均降至 $1e-5$ 以下，视电阻率与相位满足物理平滑性，质控 PASS。", flow: [["node-traditional_hf", "node-verification_qc"]], data: "QualityReport" },
+        { step: 11, agent: "uncertainty_sensitivity", type: "info", msg: "不确定性与敏感性 Agent 估算网格剖分带来的数值离散不确定性，生成 UQ 敏感度曲线。", flow: [["node-verification_qc", "node-uncertainty_sensitivity"]], data: "UQReport" },
+        { step: 12, agent: "expert_review", type: "success", msg: "专家审阅结论：由于 AI OOD 失效而及时回退至 FEM 数值方法，策略正确，数值正演曲线形态可信，批准交付。", flow: [["node-uncertainty_sensitivity", "node-expert_review"]], data: "ReviewDecision" },
+        { step: 13, agent: "output_delivery", type: "success", msg: "交付 Agent 打包最终成果包，明确报告“因 AI 泛化外失效，采用 100% 传统有限元数值计算”，完成闭环交付。", flow: [["node-expert_review", "node-output_delivery"]], data: "DeliveryPackage" },
+        { step: 14, agent: "orchestrator", type: "success", msg: "【工作流结束】总控调度核心成功处理 AI Fallback 异常，关闭状态机。", flow: [] }
+      ],
+      qc_mesh_rework: [
+        { step: 1, agent: "orchestrator", type: "info", msg: "总控调度核心接收到任务，开始初始化自适应网格调试场景。", flow: [] },
+        { step: 2, agent: "input_task", type: "info", msg: "输入 Agent 生成 TaskSpec 并传递给下游各规划节点。", flow: [["node-orchestrator", "node-input_task"]], data: "TaskSpec" },
+        { step: 3, agent: "model_diagnosis", type: "info", msg: "模型诊断 Agent 发现浅地表存在一层电阻率突变的极薄高导覆盖层，提示该界面处场量梯度衰减极快，可能产生奇异性离散误差。", flow: [["node-input_task", "node-model_diagnosis"]], data: "ModelDiagnosisReport" },
+        { step: 4, agent: "mesh_domain", type: "info", msg: "计算域与网格 Agent 进行了第一版网格剖分 (Mesh v1)，但由于界面插值算法粗糙，未能对极薄覆盖层边界做足够局部细化。", flow: [["node-model_diagnosis", "node-mesh_domain"]], data: "MeshPlan" },
+        { step: 5, agent: "solver_strategy", type: "info", msg: "求解策略 Agent 决定执行传统高保真数值路线以应对薄层异常，指定求解器参数。", flow: [["node-mesh_domain", "node-solver_strategy"]], data: "SolverPlan" },
+        { step: 6, agent: "traditional_hf", type: "info", msg: "传统高保正演 Agent 基于 Mesh v1 运行 2D 有限元正演计算，求解出全部测点的视电阻率响应曲线。", flow: [["node-solver_strategy", "node-traditional_hf"]], data: "HFForwardResult" },
+        { step: 7, agent: "verification_qc", type: "warning", msg: "【质控拒绝】QC Agent 审查发现，在高频段 (100Hz-1000Hz) 视电阻率曲线在多个测点上产生不自然的锯齿波折，相对相对误差 E_total = 7.8% > 2% 精度阈值。判定原因为：浅部薄层网格过粗导致的电荷效应数值污染。", flow: [["node-traditional_hf", "node-verification_qc"]], data: "QualityReport" },
+        { step: 8, agent: "orchestrator", type: "rework", msg: "【闭环返工】总控调度核心接收到 QC 失败报告，拒绝当前计算数据。根据错误定位，向网格 Agent 发送局部高频异常区自适应加密重算指令。", flow: [["node-verification_qc", "node-orchestrator"]], data: "ReviewDecision" },
+        { step: 9, agent: "mesh_domain", type: "rework", msg: "【网格重构】计算域与网格 Agent 接收到返工信号及错误坐标，在浅地表高程突变面和高导薄层边界附近自适应加密了一倍网格单元，生成 Mesh v2。", flow: [["node-verification_qc", "node-mesh_domain"]], data: "MeshPlan"  /* flow to mesh */ },
+        { step: 10, agent: "traditional_hf", type: "info", msg: "传统正演 Agent 使用更新后的 Mesh v2 重新组装电磁刚度矩阵并重新运行有限元线性求解器。", flow: [["node-mesh_domain", "node-traditional_hf"]], data: "HFForwardResult" },
+        { step: 11, agent: "verification_qc", type: "success", msg: "【二次质控】QC Agent 对重算曲线进行二审，视电阻率非物理锯齿消失，误差 E_total = 1.1% < 2% 限，判定通过 QC！", flow: [["node-traditional_hf", "node-verification_qc"]], data: "QualityReport" },
+        { step: 12, agent: "uncertainty_sensitivity", type: "info", msg: "不确定性与敏感性 Agent 对通过的结果做不确定性量化与敏感性参数生成。", flow: [["node-verification_qc", "node-uncertainty_sensitivity"]], data: "UQReport" },
+        { step: 13, agent: "expert_review", type: "success", msg: "专家在线复核同意：高频不连续错误已被网格局部加密消除，结果地质合理。通过审阅。", flow: [["node-uncertainty_sensitivity", "node-expert_review"]], data: "ReviewDecision" },
+        { step: 14, agent: "output_delivery", type: "success", msg: "交付 Agent 生成包含 Mesh v1 失败说明、Mesh v2 优化记录以及合格响应的最终数据包交付用户。流程闭环完成。", flow: [["node-expert_review", "node-output_delivery"]], data: "DeliveryPackage" },
+        { step: 15, agent: "orchestrator", type: "success", msg: "【工作流结束】总控完成网格自适应返工逻辑并顺利交付成果。", flow: [] }
+      ],
+      expert_rework: [
+        { step: 1, agent: "orchestrator", type: "info", msg: "总控调度核心初始化真实矿区测线正演，用户默认请求 2D 数值正演进行快速反演。", flow: [] },
+        { step: 2, agent: "input_task", type: "info", msg: "输入 Agent 将测线高程、倾子及两维频率表整理为 2D 正演标准 TaskSpec。", flow: [["node-orchestrator", "node-input_task"]], data: "TaskSpec" },
+        { step: 3, agent: "model_diagnosis", type: "info", msg: "模型诊断 Agent 报告模型存在一定程度的 Strike 扭曲，但鉴于用户 2D 设定，给出了 2D 计算的边缘风险指标。", flow: [["node-input_task", "node-model_diagnosis"]], data: "ModelDiagnosisReport" },
+        { step: 4, agent: "mesh_domain", type: "info", msg: "网格 Agent 剖分出 2D 平面自适应三角有限元网格。", flow: [["node-model_diagnosis", "node-mesh_domain"]], data: "MeshPlan" },
+        { step: 5, agent: "solver_strategy", type: "info", msg: "求解策略 Agent 选择 2D-FEM 控制方程，配置 TM 模式求解器。", flow: [["node-mesh_domain", "node-solver_strategy"]], data: "SolverPlan" },
+        { step: 6, agent: "traditional_hf", type: "info", msg: "传统正演 Agent 求解 2D 频率域 Maxwell 控制方程，并导出视电阻率与相位阻抗张量。", flow: [["node-solver_strategy", "node-traditional_hf"]], data: "HFForwardResult" },
+        { step: 7, agent: "verification_qc", type: "success", msg: "QC Agent 审查发现，从纯数学与 2D 控制方程残差来看，计算数据收敛极好，误差低于 1.5%，通过数学 QC。", flow: [["node-traditional_hf", "node-verification_qc"]], data: "QualityReport" },
+        { step: 8, agent: "uncertainty_sensitivity", type: "info", msg: "UQ Agent 生成基于 2D 模型参数扰动的局部敏感性，指出中深部异常体敏感带。", flow: [["node-verification_qc", "node-uncertainty_sensitivity"]], data: "UQReport" },
+        { step: 9, agent: "expert_review", type: "warning", msg: "【专家否决】专家审阅 Agent (地球物理研究员 Zhang) 现场把关：指出异常体呈典型的三维块状构造且斜交测线，使用 2D TM 模式近似会产生严重的三维构造阴影和伪反演错误。必须升级为 Full 3D 数值正演！决议退回返工。", flow: [["node-uncertainty_sensitivity", "node-expert_review"]], data: "ReviewDecision" },
+        { step: 10, agent: "orchestrator", type: "rework", msg: "【重大返工】总控调度接收到专家的 ReviewDecision Rework 信号，强制阻断 2D 输出，将计算难度与维度从 2D 提升为 3D，指令输入及网格 Agent 重新加载 3D 构型物性文件。", flow: [["node-expert_review", "node-orchestrator"]], data: "ReviewDecision" /* expert back to orchestrator */ },
+        { step: 11, agent: "input_task", type: "info", msg: "输入与任务定义 Agent 重新标准化加载了 3D 空间体积块电阻率模型文件，修改 TaskSpec 为 3D MT。", flow: [["node-orchestrator", "node-input_task"]], data: "TaskSpec" },
+        { step: 12, agent: "mesh_domain", type: "rework", msg: "【3D网格构建】网格 Agent 启动 3D Tetrahedral (四面体) 自适应有限元空间网格生成器，重组 12 万个空间网格单元，输出 3D MeshPlan。", flow: [["node-input_task", "node-mesh_domain"]], data: "MeshPlan" },
+        { step: 13, agent: "solver_strategy", type: "info", msg: "求解策略 Agent 切换 3D 双共轭梯度法 (BiCGSTAB) 及代数多重网格 (AMG) 预条件器，调配实验室 64 核服务器并行计算方案。", flow: [["node-mesh_domain", "node-solver_strategy"]], data: "SolverPlan" },
+        { step: 14, agent: "traditional_hf", type: "info", msg: "传统正演 Agent 运行 3D 有限元频率域 Maxwell 场量解析，耗时 124s 求解出完全三维电磁场分布及视电阻率张量响应。", flow: [["node-solver_strategy", "node-traditional_hf"]], data: "HFForwardResult" },
+        { step: 15, agent: "verification_qc", type: "success", msg: "QC Agent 对三维阻抗响应进行收敛核算，相对收敛残差 4.5e-8，质控通过。", flow: [["node-traditional_hf", "node-verification_qc"]], data: "QualityReport" },
+        { step: 16, agent: "expert_review", type: "success", msg: "专家 Zhang 重新审阅三维正演曲线及三维物理场矢量连续性，确认没有三维阴影遮盖问题，签署批准交付结论。", flow: [["node-verification_qc", "node-expert_review"]], data: "ReviewDecision" },
+        { step: 17, agent: "output_delivery", type: "success", msg: "交付 Agent 打包三维网格文件、三维多频阻抗张量、误差及专家签字，生成 DeliveryPackage 交付用户。闭环正演系统运行圆满成功！", flow: [["node-expert_review", "node-output_delivery"]], data: "DeliveryPackage" },
+        { step: 18, agent: "orchestrator", type: "success", msg: "【工作流结束】总控核心存档 3D 复杂工区计算，释放服务器资源。", flow: [] }
+      ]
+    };
+
+    // Simulation variables
+    let currentScenarioId = "regular";
+    let currentStepIndex = 0;
+    let timerId = null;
+    let isPlaying = false;
+    let stepDuration = 500;
+
+    // Load Scenario
+    function loadScenario() {
+      stopSimulation();
+      const val = document.getElementById("scenario-select").value;
+      document.getElementById("fullscreen-scenario-select").value = val;
+      currentScenarioId = val;
+      clearConsole();
+      addLog("system", `成功加载场景: ${document.getElementById("scenario-select").options[document.getElementById("scenario-select").selectedIndex].text}`, "info");
+    }
+
+    // Playback control functions
+    function startSimulation() {
+      if (isPlaying) return;
+      isPlaying = true;
+      document.getElementById("btn-run").style.display = "none";
+      document.getElementById("btn-pause").style.display = "inline-flex";
+      document.getElementById("btn-stop").disabled = false;
+      
+      document.getElementById("fs-btn-run").style.display = "none";
+      document.getElementById("fs-btn-pause").style.display = "inline-flex";
+      document.getElementById("fs-btn-stop").disabled = false;
+      
+      runStep();
+    }
+
+    // Pause Simulation
+    function pauseSimulation() {
+      isPlaying = false;
+      document.getElementById("btn-run").style.display = "inline-flex";
+      document.getElementById("btn-pause").style.display = "none";
+      
+      document.getElementById("fs-btn-run").style.display = "inline-flex";
+      document.getElementById("fs-btn-pause").style.display = "none";
+      
+      if (timerId) clearTimeout(timerId);
+    }
+
+    // Stop Simulation
+    function stopSimulation() {
+      pauseSimulation();
+      currentStepIndex = 0;
+      document.getElementById("btn-stop").disabled = true;
+      document.getElementById("fs-btn-stop").disabled = true;
+      clearActiveStates();
+      clearConsole();
+      addLog("system", "模拟已重置。等待启动。", "info");
+      document.getElementById("inspector-stage-name").innerText = "等待工作流启动...";
+      document.getElementById("active-agent-box").innerHTML = `<div style="color:var(--text-secondary); font-size: 13px;">工作流未启动。点击交互图中的任何 Agent 节点可在此查看其设计说明及参数接口。</div>`;
+      document.getElementById("json-display").innerText = "暂无数据交互";
+    }
+
+    function updateSpeed() {
+      stepDuration = parseInt(document.getElementById("speed-slider").value);
+      document.getElementById("speed-val").innerText = (stepDuration / 1000).toFixed(1) + "s";
+    }
+
+    // Fullscreen and Brightness Functions
+    function toggleFullscreenMode() {
+      const panel = document.getElementById("visualizer-panel") || document.querySelector(".panel");
+      if (!panel) return;
+      
+      const isFullscreen = panel.classList.toggle("fullscreen-mode");
+      const ctrlBar = document.getElementById("fullscreen-ctrl-bar");
+      if (ctrlBar) {
+        ctrlBar.style.display = isFullscreen ? "flex" : "none";
+      }
+      
+      if (isFullscreen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+      
+      addLog("system", isFullscreen ? "已进入全屏展示模式。" : "已退出全屏展示模式。", "info");
+    }
+
+    let currentTheme = "dark";
+
+    function changeTheme() {
+      const theme = document.getElementById("theme-select").value;
+      setTheme(theme);
+    }
+
+    function changeFsTheme() {
+      const theme = document.getElementById("fs-theme-select").value;
+      setTheme(theme);
+    }
+
+    function setTheme(theme) {
+      currentTheme = theme;
+      document.getElementById("theme-select").value = theme;
+      document.getElementById("fs-theme-select").value = theme;
+      
+      const body = document.body;
+      body.classList.remove("theme-light", "theme-warm");
+      
+      if (theme === "light") {
+        body.classList.add("theme-light");
+      } else if (theme === "warm") {
+        body.classList.add("theme-warm");
+      }
+      
+      addLog("system", `已切换为 ${theme === 'dark' ? '深色' : (theme === 'light' ? '浅色' : '暖色')} 模式。`, "info");
+    }
+
+    function loadFullscreenScenario() {
+      const val = document.getElementById("fullscreen-scenario-select").value;
+      document.getElementById("scenario-select").value = val;
+      loadScenario();
+    }
+
+    // Main step logic
+    function runStep() {
+      const scenarioSteps = scenarios[currentScenarioId];
+      if (currentStepIndex >= scenarioSteps.length) {
+        pauseSimulation();
+        addLog("system", "场景计算运行全部完成。", "success");
+        return;
+      }
+
+      const stepData = scenarioSteps[currentStepIndex];
+      
+      // Update UI active node states
+      clearActiveStates();
+      
+      const nodeElement = document.getElementById(`node-${stepData.agent}`);
+      if (nodeElement) {
+        if (stepData.type === "success") {
+          nodeElement.classList.add("active-success");
+        } else if (stepData.type === "warning" || stepData.type === "rework") {
+          nodeElement.classList.add("active-rework");
+        } else {
+          nodeElement.classList.add("active");
+        }
+      }
+
+      // Update Active Paths
+      if (stepData.flow && stepData.flow.length > 0) {
+        stepData.flow.forEach(conn => {
+          const fromNode = conn[0].replace("node-", "");
+          const toNode = conn[1].replace("node-", "");
+          const pathId = `path-${fromNode}-${toNode}`;
+          const ctrlId = `ctrl-${fromNode}-${toNode}`;
+          const pathElement = document.getElementById(pathId) || document.getElementById(ctrlId);
+          if (pathElement) {
+            if (stepData.type === "rework" || stepData.type === "warning") {
+              pathElement.classList.add("active-rework");
+            } else {
+              pathElement.classList.add("active");
+            }
+          }
+        });
+      }
+
+      // Log console message
+      addLog(stepData.agent, stepData.msg, stepData.type);
+
+      // Update Inspector Panel (on the right)
+      updateInspectorForStep(stepData);
+
+      // Auto scroll console
+      const consoleBody = document.getElementById("console-logs");
+      consoleBody.scrollTop = consoleBody.scrollHeight;
+
+      currentStepIndex++;
+      
+      if (isPlaying) {
+        timerId = setTimeout(runStep, stepDuration);
+      }
+    }
+
+    // Helper functions for simulator
+    function clearActiveStates() {
+      // Remove class from all nodes
+      document.querySelectorAll(".node").forEach(node => {
+        node.classList.remove("active", "active-success", "active-rework", "mode-highlight", "mode-highlight-rework");
+        node.style.opacity = "1";
+      });
+      // Remove active from all lines
+      document.querySelectorAll(".flow-line, .feedback-line, .control-support-line").forEach(path => {
+        path.classList.remove("active", "active-rework", "mode-highlight", "mode-highlight-rework");
+        path.style.opacity = "1";
+      });
+      // Synchronize support links visibility
+      toggleSupportLines();
+    }
+
+    function addLog(agent, msg, type) {
+      const logs = document.getElementById("console-logs");
+      const time = new Date().toTimeString().split(' ')[0];
+      const line = document.createElement("div");
+      line.className = "console-line";
+      
+      const tagMap = {
+        orchestrator: "Orchestrator",
+        physics_kb: "PhysicsKB",
+        log_governance: "LogGov",
+        input_task: "InputTask",
+        model_diagnosis: "Diagnosis",
+        mesh_domain: "MeshDomain",
+        solver_strategy: "SolverStrategy",
+        ai_surrogate: "AISurrogate",
+        traditional_hf: "HighFidelity",
+        multi_fidelity_fusion: "Fusion",
+        verification_qc: "QC_Gate",
+        uncertainty_sensitivity: "UQ_Sensitivity",
+        expert_review: "ExpertReview",
+        output_delivery: "Delivery",
+        system: "System"
+      };
+
+      const tagClass = type === "success" ? "tag-success" : (type === "warning" ? "tag-warning" : (type === "rework" ? "tag-rework" : "tag-info"));
+      const displayTag = tagMap[agent] || agent;
+
+      line.innerHTML = `
+        <span class="console-time">[${time}]</span>
+        <span class="console-tag ${tagClass}">${displayTag}</span>
+        <span class="console-msg">${msg}</span>
+      `;
+      logs.appendChild(line);
+      logs.scrollTop = logs.scrollHeight;
+    }
+
+    function clearConsole() {
+      document.getElementById("console-logs").innerHTML = "";
+    }
+
+    function toggleSupportLines() {
+      const show = document.getElementById("toggle-support-links").checked;
+      document.getElementById("support-links-group").style.display = show ? "block" : "none";
+      
+      // Also highlight active support links if any
+      if (show) {
+        document.querySelectorAll(".control-support-line").forEach(line => {
+          line.classList.add("active");
+        });
+      } else {
+        document.querySelectorAll(".control-support-line").forEach(line => {
+          line.classList.remove("active");
+        });
+      }
+    }
+
+    // Definition of 4 Link Interaction Modes
+    const interactionModes = {
+      sequential: {
+        nodes: ["input_task", "model_diagnosis", "mesh_domain", "solver_strategy", "ai_surrogate", "traditional_hf", "multi_fidelity_fusion", "verification_qc", "uncertainty_sensitivity", "expert_review", "output_delivery"],
+        paths: [
+          "path-input_task-model_diagnosis",
+          "path-model_diagnosis-mesh_domain",
+          "path-mesh_domain-solver_strategy",
+          "path-solver_strategy-ai_surrogate",
+          "path-solver_strategy-traditional_hf",
+          "path-ai_surrogate-multi_fidelity_fusion",
+          "path-traditional_hf-multi_fidelity_fusion",
+          "path-multi_fidelity_fusion-verification_qc",
+          "path-verification_qc-uncertainty_sensitivity",
+          "path-uncertainty_sensitivity-expert_review",
+          "path-expert_review-output_delivery"
+        ]
+      },
+      parallel: {
+        nodes: ["solver_strategy", "ai_surrogate", "traditional_hf", "multi_fidelity_fusion"],
+        paths: [
+          "path-solver_strategy-ai_surrogate",
+          "path-solver_strategy-traditional_hf",
+          "path-ai_surrogate-multi_fidelity_fusion",
+          "path-traditional_hf-multi_fidelity_fusion"
+        ]
+      },
+      feedback: {
+        nodes: ["mesh_domain", "solver_strategy", "ai_surrogate", "traditional_hf", "multi_fidelity_fusion", "verification_qc", "expert_review", "orchestrator", "physics_kb"],
+        paths: [
+          "path-verification_qc-mesh_domain",
+          "path-verification_qc-solver_strategy",
+          "path-verification_qc-ai_surrogate",
+          "path-verification_qc-traditional_hf",
+          "path-verification_qc-multi_fidelity_fusion",
+          "path-expert_review-orchestrator",
+          "path-expert_review-physics_kb"
+        ]
+      },
+      human: {
+        nodes: ["uncertainty_sensitivity", "verification_qc", "expert_review", "orchestrator", "physics_kb", "output_delivery"],
+        paths: [
+          "path-uncertainty_sensitivity-expert_review",
+          "path-expert_review-orchestrator",
+          "path-expert_review-physics_kb",
+          "path-expert_review-output_delivery"
+        ]
+      }
+    };
+
+    // Highlight interaction modes
+    function highlightInteractionMode(mode) {
+      // Pause simulation
+      pauseSimulation();
+      
+      // Clear all active/glow classes
+      clearActiveStates();
+      
+      if (mode === "clear") {
+        addLog("system", "清除高亮，已恢复默认工作流拓扑视图。", "info");
+        return;
+      }
+      
+      const config = interactionModes[mode];
+      if (!config) return;
+      
+      // 1. Dim all nodes and lines
+      document.querySelectorAll(".node").forEach(node => {
+        node.style.opacity = "0.15";
+      });
+      document.querySelectorAll(".flow-line, .feedback-line").forEach(path => {
+        path.style.opacity = "0.08";
+      });
+      
+      // 2. Highlight only active nodes
+      config.nodes.forEach(nodeId => {
+        const el = document.getElementById(`node-${nodeId}`);
+        if (el) {
+          el.style.opacity = "1";
+          if (mode === "feedback" && ["orchestrator", "physics_kb"].includes(nodeId)) {
+            el.classList.add("mode-highlight-rework");
+          } else if (mode === "human" && ["orchestrator", "physics_kb"].includes(nodeId)) {
+            el.classList.add("mode-highlight-rework");
+          } else {
+            el.classList.add("mode-highlight");
+          }
+        }
+      });
+      
+      // 3. Highlight only active paths
+      config.paths.forEach(pathId => {
+        const el = document.getElementById(pathId);
+        if (el) {
+          el.style.opacity = "1";
+          if (pathId.includes("verification_qc-") && !pathId.includes("uncertainty") || pathId.includes("expert_review-")) {
+            el.classList.add("mode-highlight-rework");
+          } else {
+            el.classList.add("mode-highlight");
+          }
+        }
+      });
+      
+      const modeNames = {
+        sequential: "顺序交互链路",
+        parallel: "并行交互链路",
+        feedback: "反馈交互链路 (闭环返工)",
+        human: "人机交互链路 (Human-in-the-Loop)"
+      };
+      
+      addLog("system", `已高亮拓扑图中的 [${modeNames[mode]}]，其他无关模块及连接线已调暗高对比显示。`, "info");
+    }
+
+    // Inspector Updates
+    function updateInspectorForStep(stepData) {
+      const agentKey = stepData.agent;
+      const agentInfo = agentsData[agentKey];
+      
+      // Stage mapping
+      let stageName = "总控与支撑层 (Core &amp; Support)";
+      if (["input_task", "model_diagnosis", "mesh_domain", "solver_strategy"].includes(agentKey)) {
+        stageName = "阶段一：任务标准化与计算规划";
+      } else if (["ai_surrogate", "traditional_hf", "multi_fidelity_fusion"].includes(agentKey)) {
+        stageName = "阶段二：高效率正演计算核心";
+      } else if (["verification_qc", "uncertainty_sensitivity", "expert_review", "output_delivery"].includes(agentKey)) {
+        stageName = "阶段三：质量评估、验证与成果交付";
+      }
+      
+      document.getElementById("inspector-stage-name").innerHTML = stageName;
+
+      if (agentInfo) {
+        document.getElementById("active-agent-box").innerHTML = `
+          <div class="inspector-agent-info">
+            <div class="inspector-agent-avatar">${agentInfo.emoji}</div>
+            <div>
+              <div class="inspector-agent-name">${agentInfo.name}</div>
+              <div class="inspector-agent-role">${agentInfo.en}</div>
+            </div>
+          </div>
+          <p class="desc-text">${agentInfo.desc}</p>
+        `;
+      } else {
+        document.getElementById("active-agent-box").innerHTML = `
+          <div class="inspector-agent-name">${agentKey.toUpperCase()}</div>
+          <p class="desc-text">${stepData.msg}</p>
+        `;
+      }
+
+      // Display data object
+      if (stepData.data && dataObjectsData[stepData.data]) {
+        const obj = dataObjectsData[stepData.data];
+        document.getElementById("active-data-box").innerHTML = `
+          <div class="section-title">信道流转数据 (${obj.name})</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:5px;">生成自: ${obj.generator}</div>
+          <div class="json-block" id="json-display" style="flex:1; max-height: 250px;">${formatJsonHTML(obj.schema)}</div>
+        `;
+      } else {
+        document.getElementById("active-data-box").innerHTML = `
+          <div class="section-title">信道流转数据 (Structured IO Object)</div>
+          <div class="json-block" id="json-display" style="flex:1;">当前步骤未传递持久数据对象</div>
+        `;
+      }
+    }
+
+    // Render static lists
+    function renderAgentsMatrix() {
+      const grid = document.getElementById("agents-grid");
+      grid.innerHTML = "";
+      
+      for (const key in agentsData) {
+        const agent = agentsData[key];
+        const card = document.createElement("div");
+        card.className = "agent-card";
+        card.setAttribute("onclick", `showAgentModal('${key}')`);
+        
+        card.innerHTML = `
+          <div class="agent-card-header">
+            <div class="agent-card-icon">${agent.emoji}</div>
+            <div>
+              <div class="agent-card-title">${agent.name}</div>
+              <div class="agent-card-role">${agent.en}</div>
+            </div>
+          </div>
+          <p class="agent-card-desc">${agent.desc.substring(0, 75)}...</p>
+          <div class="agent-card-io">
+            <span class="io-tag">输入: ${agent.inputs.length}个</span>
+            <span class="io-tag">输出: ${agent.outputs.length}个</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+    }
+
+    function renderObjectsTab() {
+      const list = document.getElementById("objects-list");
+      list.innerHTML = "";
+      
+      let isFirst = true;
+      for (const key in dataObjectsData) {
+        const obj = dataObjectsData[key];
+        const item = document.createElement("div");
+        item.className = `object-list-item ${isFirst ? 'active' : ''}`;
+        item.id = `obj-item-${key}`;
+        item.setAttribute("onclick", `selectDataObject('${key}')`);
+        item.innerHTML = `
+          <span>${key}</span>
+          <span style="font-size: 10px; opacity:0.6;">${obj.name.split(' ')[0]}</span>
+        `;
+        list.appendChild(item);
+        
+        if (isFirst) {
+          showDataObjectDetail(key);
+          isFirst = false;
+        }
+      }
+    }
+
+    function selectDataObject(key) {
+      document.querySelectorAll(".object-list-item").forEach(item => {
+        item.classList.remove("active");
+      });
+      document.getElementById(`obj-item-${key}`).classList.add("active");
+      showDataObjectDetail(key);
+    }
+
+    function showDataObjectDetail(key) {
+      const obj = dataObjectsData[key];
+      document.getElementById("obj-detail-name").innerText = obj.name;
+      document.getElementById("obj-detail-desc").innerText = obj.desc;
+      document.getElementById("obj-detail-io-meta").innerHTML = `
+        <div class="detail-card">
+          <div class="detail-card-title">主要生成者 (Generator)</div>
+          <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">${obj.generator}</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-title">核心接收者 (Consumers)</div>
+          <div style="font-size:12px; color:var(--text-secondary); line-height:1.4;">${obj.receivers}</div>
+        </div>
+      `;
+      document.getElementById("obj-detail-json").innerHTML = formatJsonHTML(obj.schema);
+    }
+
+    function renderKnowledgeTab() {
+      const grid = document.getElementById("kb-grid");
+      grid.innerHTML = `
+        <div class="kb-equation-card">
+          <div class="kb-equation-header">
+            <div class="kb-equation-title">MT 控制物理方程 (Governing Maxwell Equations)</div>
+            <span class="kb-equation-tag">物理机理约束</span>
+          </div>
+          <p class="desc-text" style="margin-bottom:15px;">在大地电磁(MT)物理中，所有计算与拟合都必须受制于赫兹/麦克斯韦电磁控制方程。以二维 TM 模式和一维层状介质阻抗递归公式为例，物理知识库向数值离散和 PINN (物理信息神经网络) 提供了控制底层代码逻辑的数学依据。</p>
+          <div class="math-block">
+            $$\\frac{\\partial}{\\partial y}\\left(\\rho \\frac{\\partial H_x}{\\partial y}\\right) + \\frac{\\partial}{\\partial z}\\left(\\rho \\frac{\\partial H_x}{\\partial z}\\right) + i\\omega\\mu H_x = 0$$
+          </div>
+          <div class="math-block">
+            $$Z_1 = Z_0 \\frac{Z_2 + Z_0 \\tanh(k_1 h_1)}{Z_0 + Z_2 \\tanh(k_1 h_1)}$$
+          </div>
+        </div>
+
+        <div class="kb-equation-card">
+          <div class="kb-equation-header">
+            <div class="kb-equation-title">空间剖分与计算域尺度规则 (Domain &amp; Grid Sizing Rules)</div>
+            <span class="kb-equation-tag">有限元精度离散</span>
+          </div>
+          <p class="desc-text" style="margin-bottom:15px;">数值计算中网格尺度越密越精确，但开销也越大。网格剖分必须遵循物理趋肤深度规则：在高频段或薄岩层，场衰减极快，必须保证局部网格步长比局部趋肤深度小一个数量级；同时，低频段趋肤深度极广，计算域边界必须外延足够大，否则人工边界反射会带来非物理异常污染。</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="math-block">
+              $$L_x \\ge L_{survey} + 2 k_x \\delta_{max}$$
+            </div>
+            <div class="math-block">
+              $$h_{grid}(x,\\omega) \\le \\alpha \\delta(x,\\omega)$$
+            </div>
+          </div>
+        </div>
+
+        <div class="kb-equation-card">
+          <div class="kb-equation-header">
+            <div class="kb-equation-title">AI Surrogate 联合物理约束与泛化判断 (Physics Informed Loss &amp; OOD)</div>
+            <span class="kb-equation-tag">物理AI与自检</span>
+          </div>
+          <p class="desc-text" style="margin-bottom:15px;">为了防止 AI 代理模型预测的黑箱结论不遵循 Maxwell 控制偏微分方程，在训练 AI 时引入 PDE 物理惩罚损失以及边界一致性损失；在模型计算时，使用特征马氏距离检测当前模型物性分布是否为超出训练库的离分布(OOD)状态，确保预测结果的高信度。</p>
+          <div class="math-block">
+            $$\\mathcal{L} = \\mathcal{L}_{data} + \\lambda_{PDE} \\|\\mathcal{F}_{Maxwell}(\\hat{u})\\|^2_2 + \\lambda_{BC} \\|\\mathcal{B}(\\hat{u})\\|^2_2$$
+          </div>
+          <div class="math-block">
+            $$D_{OOD} = \\sqrt{(\\mathbf{z} - \\boldsymbol{\mu})^T \\boldsymbol{\Sigma}^{-1} (\\mathbf{z} - \\boldsymbol{\mu})} \\le 3.0$$
+          </div>
+        </div>
+
+        <div class="kb-equation-card">
+          <div class="kb-equation-header">
+            <div class="kb-equation-title">多保真残差标定与质量控制综合判定 (Multi-Fidelity Calibration &amp; QC)</div>
+            <span class="kb-equation-tag">闭环质控与多保真</span>
+          </div>
+          <p class="desc-text" style="margin-bottom:15px;">通过 10% 频点的高保真传统 FEM 模拟，构建偏差预测高斯过程 $g_\\eta$，对 AI 超快速外推曲线进行偏置标定，可达到极高的数值精度。而质控闸门在相对电阻率误差、相位绝对误差以及线性方程残差中进行联合阈值校验，不通过时进行多层级反馈重构。</p>
+          <div class="math-block">
+            $$d_{fusion} = d_{AI} + \\hat{r}(m), \\quad E_{total} = \\max(e_Z, e_{\\rho}, e_{\\phi}, e_{PDE}) \\le \\epsilon_{tol}$$
+          </div>
+        </div>
+      `;
+      
+      // Request MathJax typesetting
+      if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+        window.MathJax.typeset();
+      }
+    }
+
+    // Modal Operations
+    function showAgentModal(id) {
+      const agent = agentsData[id];
+      if (!agent) return;
+      
+      document.getElementById("modal-agent-name").innerText = `${agent.emoji} ${agent.name} 详细规格说明`;
+      
+      let inputLines = agent.inputs.map(ip => `<li><strong>从 [${ip.from}]:</strong> ${ip.info}</li>`).join("");
+      let outputLines = agent.outputs.map(op => `<li><strong>输出给 [${op.to}]:</strong> ${op.info}</li>`).join("");
+      let moduleLines = agent.modules.map(mod => `<li>${mod}</li>`).join("");
+      let ruleLines = agent.rules.map((rule, idx) => `
+        <div class="rule-item">
+          <span class="rule-num">${idx + 1}.</span>${rule}
+        </div>
+      `).join("");
+
+      document.getElementById("modal-body-content").innerHTML = `
+        <div class="inspector-agent-info">
+          <div class="inspector-agent-avatar" style="width: 50px; height: 50px; font-size: 24px;">${agent.emoji}</div>
+          <div>
+            <div class="inspector-agent-name" style="font-size: 18px;">${agent.name}</div>
+            <div class="inspector-agent-role">${agent.en}</div>
+          </div>
+        </div>
+        
+        <p class="desc-text" style="font-size: 14px;">${agent.desc}</p>
+        
+        <div class="modal-grid-two">
+          <div class="detail-card">
+            <div class="detail-card-title">输入来源与信息</div>
+            <ul class="detail-list">${inputLines}</ul>
+          </div>
+          <div class="detail-card">
+            <div class="detail-card-title">输出对象与信道</div>
+            <ul class="detail-list">${outputLines}</ul>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-card-title">内部子模块与功能</div>
+          <ul class="detail-list">${moduleLines}</ul>
+        </div>
+
+        ${agent.math ? `
+          <div class="detail-card">
+            <div class="detail-card-title">核心数学关系或控制偏微分方程</div>
+            <div class="math-block">$$${agent.math}$$</div>
+            <p class="desc-text" style="font-size: 12px; margin-top: 8px; color:var(--text-muted);">${agent.mathDesc}</p>
+          </div>
+        ` : ''}
+
+        <div class="detail-card">
+          <div class="detail-card-title">关键交互行为与反馈规则</div>
+          <div>${ruleLines}</div>
+        </div>
+      `;
+      
+      document.getElementById("agent-modal").style.display = "flex";
+      
+      // Trigger MathJax re-render
+      if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+        window.MathJax.typeset();
+      }
+    }
+
+    function hideModal() {
+      document.getElementById("agent-modal").style.display = "none";
+    }
+
+    function closeModal(e) {
+      if (e.target.id === "agent-modal") {
+        hideModal();
+      }
+    }
+
+    // JS-based JSON Highlighter
+    function formatJsonHTML(jsonStr) {
+      return jsonStr
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+          let cls = 'json-number';
+          if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+              cls = 'json-key';
+            } else {
+              cls = 'json-string';
+            }
+          } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+          }
+          return '<span class="' + cls + '">' + match + '</span>';
+        });
+    }
+
+    // General tab switcher
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.remove("active");
+      });
+      document.querySelectorAll(".tab-content").forEach(content => {
+        content.classList.remove("active");
+      });
+      
+      // Find matching tab button
+      const btn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.innerText.includes(tabId === 'tab-simulator' ? '交互工作流' : (tabId === 'tab-agents' ? 'Agent 责任' : (tabId === 'tab-objects' ? '核心数据' : '物理与规则'))));
+      if (btn) btn.classList.add("active");
+      
+      document.getElementById(tabId).classList.add("active");
+      
+      // Force MathJax refresh if switching to Math-heavy tabs
+      if (tabId === 'tab-knowledge' || tabId === 'tab-agents') {
+        if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+          window.MathJax.typeset();
+        }
+      }
+    }
+
+    // Direct node inspection on diagram click
+    function selectAgent(id) {
+      const agentInfo = agentsData[id];
+      if (!agentInfo) return;
+      
+      let inputLines = agentInfo.inputs.map(ip => `<li><strong>[${ip.from}]:</strong> ${ip.info}</li>`).join("");
+      let outputLines = agentInfo.outputs.map(op => `<li><strong>[${op.to}]:</strong> ${op.info}</li>`).join("");
+      
+      document.getElementById("inspector-stage-name").innerHTML = "手动节点查询 / 规格参数";
+      
+      document.getElementById("active-agent-box").innerHTML = `
+        <div class="inspector-agent-info">
+          <div class="inspector-agent-avatar">${agentInfo.emoji}</div>
+          <div>
+            <div class="inspector-agent-name">${agentInfo.name}</div>
+            <div class="inspector-agent-role">${agentInfo.en}</div>
+          </div>
+          <button onclick="showAgentModal('${id}')" style="margin-left:auto; background:var(--color-purple); border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; color:#fff;">完整规格</button>
+        </div>
+        <p class="desc-text" style="margin-bottom:8px;">${agentInfo.desc}</p>
+        <div style="font-size:11px; color:var(--text-secondary);">
+          <strong>输入项 (${agentInfo.inputs.length}):</strong>
+          <ul class="detail-list" style="margin-bottom:6px;">${inputLines}</ul>
+          <strong>输出项 (${agentInfo.outputs.length}):</strong>
+          <ul class="detail-list">${outputLines}</ul>
+        </div>
+      `;
+
+      // Display math formula if available
+      if (agentInfo.math) {
+        document.getElementById("active-data-box").innerHTML = `
+          <div class="section-title">核心数学约束关系</div>
+          <div class="math-block" id="inspector-math">$$${agentInfo.math}$$</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:5px; line-height:1.4;">${agentInfo.mathDesc}</div>
+        `;
+        if (window.MathJax && typeof window.MathJax.typeset === 'function') {
+          window.MathJax.typeset([document.getElementById("inspector-math")]);
+        }
+      } else {
+        document.getElementById("active-data-box").innerHTML = `
+          <div class="section-title">核心数学约束关系</div>
+          <div class="json-block" style="flex:1;">该模块以调度逻辑或过程治理为主，无特定物理控制偏微分方程。</div>
+        `;
+      }
+    }
+
+    function initializePage() {
+      renderAgentsMatrix();
+      renderObjectsTab();
+      renderKnowledgeTab();
+      loadScenario();
+      setTheme("warm"); // Apply default warm background theme on load
+
+      // Notify parent that the iframe is loaded and ready to sync themes
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "iframeReady" }, "*");
+      }
+    }
+
+    // Initialize Page
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initializePage);
+    } else {
+      initializePage();
+    }
+
+    // Listen to theme synchronization messages from parent window
+    window.addEventListener("message", function(event) {
+      if (event.data && event.data.type === "setTheme") {
+        setTheme(event.data.theme);
+      }
+    });
+  </script>
+</body>
+</html>
